@@ -426,6 +426,10 @@ def create_tarea():
         fecha_programada=fecha_programada,
         duracion_estimada_horas=data.get('duracion_estimada_horas'),
         notas=data.get('notas') or data.get('observaciones'),
+        materiales_requeridos=data.get('materiales_requeridos'),
+        herramientas_requeridas=data.get('herramientas_requeridas'),
+        procedimiento=data.get('procedimiento'),
+        resultado=data.get('resultado'),
         fotos=data.get('fotos', [])
     )
     
@@ -476,6 +480,11 @@ def update_tarea(id):
     tarea.estado = data.get('estado', tarea.estado)
     tarea.duracion_estimada_horas = data.get('duracion_estimada_horas', tarea.duracion_estimada_horas)
     tarea.notas = data.get('notas') or data.get('observaciones') or tarea.notas
+    # Actualizar los nuevos campos
+    tarea.materiales_requeridos = data.get('materiales_requeridos', tarea.materiales_requeridos)
+    tarea.herramientas_requeridas = data.get('herramientas_requeridas', tarea.herramientas_requeridas)
+    tarea.procedimiento = data.get('procedimiento', tarea.procedimiento)
+    tarea.resultado = data.get('resultado', tarea.resultado)
     tarea.fotos = data.get('fotos', tarea.fotos)
     
     # Manejar asignaciones si existen

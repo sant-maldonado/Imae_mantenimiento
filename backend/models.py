@@ -172,6 +172,10 @@ class Tarea(db.Model):
     fecha_fin = db.Column(db.Date)
     duracion_estimada_horas = db.Column(db.Float)
     notas = db.Column(db.Text)
+    materiales_requeridos = db.Column(db.Text)  # Materiales necesarios para la tarea
+    herramientas_requeridas = db.Column(db.Text)  # Herramientas necesarias
+    procedimiento = db.Column(db.Text)  # Procedimiento o proceso a seguir
+    resultado = db.Column(db.Text)  # Resultado de la tarea
     fotos = db.Column(db.JSON)  # Array de URLs de fotos
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -197,6 +201,10 @@ class Tarea(db.Model):
             'duracion_estimada_horas': self.duracion_estimada_horas,
             'notas': self.notas,
             'observaciones': self.notas,
+            'materiales_requeridos': self.materiales_requeridos or '',
+            'herramientas_requeridas': self.herramientas_requeridas or '',
+            'procedimiento': self.procedimiento or '',
+            'resultado': self.resultado or '',
             'fotos': self.fotos or [],
             'asignaciones': [a.to_dict() for a in self.asignaciones],
             'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,

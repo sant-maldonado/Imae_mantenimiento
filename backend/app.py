@@ -43,46 +43,25 @@
 #     app.run(host='127.0.0.1', port=port, debug=True)
 
 
-
-
-
-from flask import Flask, jsonify
+from flask import Flask, render_template
 from flask_cors import CORS
 from config import Config
 from models import db
 from routes import api
-import os
 
 def create_app():
-    """Crear y configurar la aplicación Flask"""
     app = Flask(__name__)
     app.config.from_object(Config)
-    
-    # Habilitar CORS
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-    
-    # Inicializar SQLAlchemy
+
+    CORS(app)
     db.init_app(app)
-    
-    # Registrar blueprint de API
+
     app.register_blueprint(api)
-    
-    # 🔥 RUTA PRINCIPAL (IMPORTANTE PARA RENDER)
+
     @app.route('/')
     def index():
-        return "FUNCIONA OK"
+        return render_template("index.html")  # 👈 CLAVE
 
-    # ❌ COMENTADO TEMPORALMENTE (evita que se tilde)
-    # with app.app_context():
-    #     db.create_all()
-    #     print("Tablas creadas en la base de datos")
-    
     return app
 
-# Crear la aplicación
 app = create_app()
-
-# 🔥 SOLO PARA LOCAL (Render usa gunicorn)
-if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)

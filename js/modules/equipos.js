@@ -12,7 +12,7 @@ const modEquipos = {
         const estadoFilter = document.getElementById('filtroEstado');
         const searchInput = document.getElementById('buscarEquipo');
         
-        let equipos = storage.getEquipos().filter(e => e.estado !== 'dado_baja');
+        let equipos = storage.getEquipos().filter(e => e.estado !== 'dado_baja' && e.estado !== 'inactivo' && e.activo !== false);
         
         // Aplicar filtros
         if (laboratorioFilter && laboratorioFilter.value) {

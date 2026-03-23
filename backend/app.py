@@ -45,9 +45,9 @@
 
 from flask import Flask, render_template
 from flask_cors import CORS
-from config import Config
-from models import db
-from routes import api
+from backend.config import Config
+from backend.models import db
+from backend.routes import api
 
 def create_app():
     app = Flask(__name__)

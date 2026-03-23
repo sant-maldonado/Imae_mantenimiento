@@ -8,7 +8,7 @@ const modTecnicos = {
         const grid = document.getElementById('tecnicosGrid');
         if (!grid) return;
         
-        const tecnicos = storage.getTecnicos().filter(t => t.estado === 'activo');
+        const tecnicos = storage.getTecnicos().filter(t => t.estado === 'activo' || t.activo === true);
         
         if (tecnicos.length === 0) {
             grid.innerHTML = `

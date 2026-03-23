@@ -237,6 +237,27 @@ const modTareas = {
                 <p style="color: var(--text-secondary);">${tarea.descripcion || 'Sin descripción'}</p>
             </div>
             
+            ${tarea.herramientas_requeridas ? `
+            <div class="detail-section">
+                <h4 class="detail-section-title">Herramientas Requeridas</h4>
+                <p style="color: var(--text-secondary); white-space: pre-wrap;">${tarea.herramientas_requeridas}</p>
+            </div>
+            ` : ''}
+            
+            ${tarea.materiales_requeridos ? `
+            <div class="detail-section">
+                <h4 class="detail-section-title">Materiales Requeridos</h4>
+                <p style="color: var(--text-secondary); white-space: pre-wrap;">${tarea.materiales_requeridos}</p>
+            </div>
+            ` : ''}
+            
+            ${tarea.procedimiento ? `
+            <div class="detail-section">
+                <h4 class="detail-section-title">Procedimiento / Proceso</h4>
+                <p style="color: var(--text-secondary); white-space: pre-wrap;">${tarea.procedimiento}</p>
+            </div>
+            ` : ''}
+            
             ${tecnicosAsignados.length > 0 ? `
             <div class="detail-section">
                 <h4 class="detail-section-title">Técnicos Asignados</h4>
@@ -398,6 +419,11 @@ const modTareas = {
                     <textarea class="form-textarea" name="herramientas_requeridas" placeholder="Lista de herramientas">${tarea.herramientas_requeridas}</textarea>
                 </div>
                 
+                <div class="form-group">
+                    <label class="form-label">Procedimiento / Proceso</label>
+                    <textarea class="form-textarea" name="procedimiento" placeholder="Pasos del procedimiento o proceso a seguir" rows="4">${tarea.procedimiento}</textarea>
+                </div>
+                
                 ${id ? `
                 <div class="form-group">
                     <label class="form-label">Resultado</label>
@@ -445,6 +471,12 @@ const modTareas = {
         const estadoSelect = form.querySelector('select[name="estado"]');
         const descripcionInput = form.querySelector('textarea[name="descripcion"]');
         
+        // Obtener campos adicionales del formulario
+        const materialesInput = form.querySelector('textarea[name="materiales_requeridos"]');
+        const herramientasInput = form.querySelector('textarea[name="herramientas_requeridas"]');
+        const procedimientoInput = form.querySelector('textarea[name="procedimiento"]');
+        const resultadoInput = form.querySelector('textarea[name="resultado"]');
+
         const data = {
             titulo: tituloInput ? tituloInput.value : '',
             id_equipo: equipoSelect ? equipoSelect.value : '',
@@ -453,7 +485,11 @@ const modTareas = {
             fecha_programada: fechaProgramadaInput ? fechaProgramadaInput.value : '',
             duracion_estimada_horas: duracionInput ? parseInt(duracionInput.value) || 1 : 1,
             estado: estadoSelect ? estadoSelect.value : 'pendiente',
-            descripcion: descripcionInput ? descripcionInput.value : ''
+            descripcion: descripcionInput ? descripcionInput.value : '',
+            materiales_requeridos: materialesInput ? materialesInput.value : '',
+            herramientas_requeridas: herramientasInput ? herramientasInput.value : '',
+            procedimiento: procedimientoInput ? procedimientoInput.value : '',
+            resultado: resultadoInput ? resultadoInput.value : ''
         };
         
         // Obtener técnicos marcados
@@ -467,6 +503,28 @@ const modTareas = {
             
             // Mantener asignaciones existentes y agregar nuevas
             data.asignaciones = existing ? [...existing.asignaciones] : [];
+            
+            // Mantener campos existentes que no se modificaron en el formulario
+            if (existing) {
+                // Verificar si los campos fueron modificados en el formulario
+                const materialesValue = materialesInput ? materialesInput.value : '';
+                const herramientasValue = herramientasInput ? herramientasInput.value : '';
+                const procedimientoValue = procedimientoInput ? procedimientoInput.value : '';
+                const resultadoValue = resultadoInput ? resultadoInput.value : '';
+                
+                // Si el campo del formulario tiene contenido, usarlo; si está vacío, mantener el anterior
+                data.materiales_requeridos = materialesValue.trim() || existing.materiales_requeridos || '';
+                data.herramientas_requeridas = herramientasValue.trim() || existing.herramientas_requeridas || '';
+                data.procedimiento = procedimientoValue.trim() || existing.procedimiento || '';
+                data.resultado = resultadoValue.trim() || existing.resultado || '';
+                
+                // Mantener fotos existentes
+                data.fotos = existing.fotos || [];
+                // Mantener fechas existentes
+                data.fecha_inicio_real = existing.fecha_inicio_real || null;
+                data.fecha_fin_real = existing.fecha_fin_real || null;
+                data.duracion_real_horas = existing.duracion_real_horas || 0;
+            }
             
             tecnicosSeleccionados.forEach(tecId => {
                 const yaExiste = data.asignaciones.some(a => a.id_tecnico === tecId);

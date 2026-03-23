@@ -8,7 +8,8 @@ const modLaboratorios = {
         const grid = document.getElementById('laboratoriosGrid');
         if (!grid) return;
         
-        const laboratorios = storage.getLaboratorios().filter(l => l.estado === 'activo');
+        // Filtrar por activo (soporta tanto 'estado: activo' como 'activo: true')
+        const laboratorios = storage.getLaboratorios().filter(l => l.estado === 'activo' || l.activo === true);
         
         if (laboratorios.length === 0) {
             grid.innerHTML = `

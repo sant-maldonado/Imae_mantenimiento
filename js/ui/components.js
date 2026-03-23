@@ -281,6 +281,30 @@ const ui = {
         tbody.innerHTML = rows.map(row => `
             <tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
         `).join('');
+    },
+    
+    // Mostrar información de contacto
+    showContacto() {
+        const content = `
+            <div style="text-align: center; padding: 20px;">
+                <div style="font-size: 48px; margin-bottom: 20px;">🏢</div>
+                <h3 style="margin-bottom: 20px;">Empresa Desarrolladora</h3>
+                <div style="background: var(--bg-light); padding: 20px; border-radius: 10px; text-align: left;">
+                    <p style="margin-bottom: 15px; color: #000;">
+                        <strong>📧 Email:</strong><br>
+                        <a href="mailto:sm.santiagomaldonado@gmail.com" style="color: #000;">sm.santiagomaldonado@gmail.com</a>
+                    </p>
+                    <p style="margin-bottom: 15px; color: #000;">
+                        <strong>📱 Teléfono:</strong><br>
+                        <a href="tel:3413502389" style="color: #000;">3413-502389</a>
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        const footer = `<button class="btn btn-primary" onclick="ui.closeModal()">Cerrar</button>`;
+        
+        this.showModal('Contacto', content, footer);
     }
 };
 

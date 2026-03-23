@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify, send_file
-from models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
-from datetime import datetime
+from backend.models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
 import uuid
 from fpdf import FPDF
 import io

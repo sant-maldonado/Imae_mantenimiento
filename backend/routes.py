@@ -1,11 +1,63 @@
 from flask import Blueprint, request, jsonify, send_file
-from backend.models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
-import uuid
+from models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
 from fpdf import FPDF
+from datetime import datetime
+from uuid import uuid4
+import uuid
 import io
+import os
+import base64
 
 # Blueprint para las rutas API
 api = Blueprint('api', __name__, url_prefix='/api')
+
+# ============ UPLOAD FOTOS ============
+
+@api.route('/upload/foto', methods=['POST'])
+def upload_foto():
+    """Subir foto de técnico"""
+    try:
+        data = request.get_json()
+        if not data or 'imagen' not in data or 'tecnico_id' not in data:
+            return jsonify({'error': 'Faltan datos'}), 400
+        
+        tecnico_id = data['tecnico_id']
+        imagen_base64 = data['imagen']
+        
+        # Quitar prefijo data:image si existe
+        if 'base64,' in imagen_base64:
+            imagen_base64 = imagen_base64.split('base64,')[1]
+        
+        # Decodificar imagen
+        imagen_bytes = base64.b64decode(imagen_base64)
+        
+        # Nombre de archivo
+        filename = f"tec_{tecnico_id}.jpg"
+        uploads_folder = os.path.join(os.path.dirname(__file__), 'uploads', 'fotos')
+        
+        # Crear carpeta si no existe
+        if not os.path.exists(uploads_folder):
+            os.makedirs(uploads_folder)
+        
+        # Guardar archivo
+        filepath = os.path.join(uploads_folder, filename)
+        with open(filepath, 'wb') as f:
+            f.write(imagen_bytes)
+        
+        # Guardar URL en la base de datos
+        tecnico = Tecnico.query.get(tecnico_id)
+        if tecnico:
+            tecnico.foto = f"/uploads/fotos/{filename}"
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'foto': f"/uploads/fotos/{filename}"
+        })
+        
+    except Exception as e:
+        print(f"Error uploading foto: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # ============ LABORATORIOS ============
 
@@ -115,7 +167,7 @@ def create_equipo():
     data = request.get_json()
     
     fecha_instalacion = None
-    if data.get('fecha_instalacion'):
+    if data.get('fecha_instalacion') and data['fecha_instalacion'].strip():
         fecha_instalacion = datetime.strptime(data['fecha_instalacion'], '%Y-%m-%d').date()
     
     # Manejar backwards compatibility: aceptar 'estado' o 'activo'
@@ -160,11 +212,14 @@ def update_equipo(id):
     if 'id_laboratorio' in data and data['id_laboratorio']:
         equipo.id_laboratorio = data['id_laboratorio']
     
-    if 'ultimo_mantenimiento' in data and data['ultimo_mantenimiento']:
-        equipo.fecha_ultimo_mantenimiento = datetime.strptime(data['ultimo_mantenimiento'], '%Y-%m-%d').date()
+    # Manejar nombres de campos del frontend
+    ultimo_mantenimiento = data.get('ultimo_mantenimiento') or data.get('fecha_ultimo_mantenimiento')
+    if ultimo_mantenimiento:
+        equipo.fecha_ultimo_mantenimiento = datetime.strptime(ultimo_mantenimiento, '%Y-%m-%d').date()
     
-    if 'proximo_mantenimiento' in data and data['proximo_mantenimiento']:
-        equipo.fecha_proximo_mantenimiento = datetime.strptime(data['proximo_mantenimiento'], '%Y-%m-%d').date()
+    proximo_mantenimiento = data.get('proximo_mantenimiento') or data.get('fecha_proximo_mantenimiento')
+    if proximo_mantenimiento:
+        equipo.fecha_proximo_mantenimiento = datetime.strptime(proximo_mantenimiento, '%Y-%m-%d').date()
     
     equipo.nombre = data.get('nombre', equipo.nombre)
     equipo.codigo = data.get('codigo', equipo.codigo)
@@ -173,12 +228,17 @@ def update_equipo(id):
     equipo.modelo = data.get('modelo', equipo.modelo)
     equipo.serie = data.get('serie', equipo.serie)
     equipo.numero_serie = data.get('numero_serie', equipo.numero_serie)
-    # Manejar backwards compatibility: aceptar 'estado' o 'activo'
+    
+    # Manejar estado y activo
+    if 'estado' in data:
+        equipo.estado = data.get('estado')
     if 'activo' in data:
         equipo.activo = data.get('activo')
     elif 'estado' in data:
         equipo.activo = (data.get('estado') == 'operativo' or data.get('estado') == 'activo')
-    equipo.descripcion = data.get('descripcion', equipo.descripcion)
+    
+    # Manejar descripcion (acepta 'observaciones' del frontend)
+    equipo.descripcion = data.get('descripcion') or data.get('observaciones') or equipo.descripcion
     
     db.session.commit()
     return jsonify(equipo.to_dict())
@@ -305,34 +365,46 @@ def get_tecnico(id):
 def create_tecnico():
     """Crear un nuevo técnico"""
     data = request.get_json()
-    
-    # Manejar backwards compatibility: aceptar 'estado' o 'activo'
-    activo_value = data.get('activo')
-    if activo_value is None:
-        estado_value = data.get('estado', 'activo')
-        activo_value = (estado_value == 'activo')
-    
-    fecha_contratacion = None
-    if data.get('fecha_contratacion'):
-        fecha_contratacion = datetime.strptime(data['fecha_contratacion'], '%Y-%m-%d').date()
-    
-    tecnico = Tecnico(
-        id=data.get('id') or str(uuid.uuid4()),
-        nombre=data.get('nombre'),
-        apellido=data.get('apellido'),
-        email=data.get('email'),
-        telefono=data.get('telefono'),
-        especialidad=data.get('especialidad'),
-        legajo=data.get('legajo'),
-        activo=activo_value,
-        fecha_contratacion=fecha_contratacion,
-        horas_trabajadas_mes=data.get('horas_trabajadas_mes', 0)
-    )
-    
-    db.session.add(tecnico)
-    db.session.commit()
-    
-    return jsonify(tecnico.to_dict()), 201
+    print("Data received:", data)
+    try:
+        
+        # Manejar backwards compatibility: aceptar 'estado' o 'activo'
+        activo_value = data.get('activo')
+        if activo_value is None:
+            estado_value = data.get('estado', 'activo')
+            activo_value = (estado_value == 'activo')
+        
+        fecha_contratacion = None
+        if data.get('fecha_contratacion') and data['fecha_contratacion'].strip():
+            fecha_contratacion = datetime.strptime(data['fecha_contratacion'], '%Y-%m-%d').date()
+        
+        horas_trabajadas_mes = data.get('horas_trabajadas_mes')
+        if horas_trabajadas_mes is not None and str(horas_trabajadas_mes).strip():
+            horas_trabajadas_mes = int(horas_trabajadas_mes)
+        else:
+            horas_trabajadas_mes = 0
+        
+        tecnico = Tecnico(
+            id=data.get('id') or str(uuid.uuid4()),
+            nombre=data.get('nombre'),
+            apellido=data.get('apellido'),
+            email=data.get('email'),
+            telefono=data.get('telefono'),
+            especialidad=data.get('especialidad'),
+            legajo=data.get('legajo'),
+            activo=activo_value,
+            foto=data.get('foto'),
+            fecha_contratacion=fecha_contratacion,
+            horas_trabajadas_mes=horas_trabajadas_mes
+        )
+
+        db.session.add(tecnico)
+        db.session.commit()
+        
+        return jsonify(tecnico.to_dict()), 201
+    except Exception as e:
+        print(f"Error creating tecnico: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @api.route('/tecnicos/<id>', methods=['PUT'])
@@ -354,13 +426,17 @@ def update_tecnico(id):
     tecnico.telefono = data.get('telefono', tecnico.telefono)
     tecnico.especialidad = data.get('especialidad', tecnico.especialidad)
     tecnico.legajo = data.get('legajo', tecnico.legajo)
+    if 'foto' in data:
+        tecnico.foto = data.get('foto')
     if 'horas_trabajadas_mes' in data:
         tecnico.horas_trabajadas_mes = data.get('horas_trabajadas_mes')
-    # Manejar backwards compatibility: aceptar 'estado' o 'activo'
+    
+    # Manejar estado y activo
+    if 'estado' in data:
+        tecnico.estado = data.get('estado')
+        tecnico.activo = (data.get('estado') == 'activo')
     if 'activo' in data:
         tecnico.activo = data.get('activo')
-    elif 'estado' in data:
-        tecnico.activo = (data.get('estado') == 'activo')
     
     db.session.commit()
     return jsonify(tecnico.to_dict())

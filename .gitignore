@@ -141,3 +141,6 @@ dmypy.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Frontend (se sube a Netlify por separado)
+frontend/

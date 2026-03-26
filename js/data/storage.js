@@ -1,7 +1,7 @@
 // Servicio de almacenamiento - Ahora usa API REST en lugar de localStorage
 // Usar la URL del navegador actual para que funcione con cualquier puerto
 const getApiUrl = () => {
-    const port = 5500; // Puerto del backend
+    const port = 8000; // Puerto del backend
     return `http://127.0.0.1:${port}/api`;
 };
 const API_URL = getApiUrl();

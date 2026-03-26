@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, send_file
-from models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
+from .models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
 from fpdf import FPDF
 from datetime import datetime
 from uuid import uuid4
@@ -8,56 +8,7 @@ import io
 import os
 import base64
 
-# Blueprint para las rutas API
 api = Blueprint('api', __name__, url_prefix='/api')
-
-# ============ UPLOAD FOTOS ============
-
-@api.route('/upload/foto', methods=['POST'])
-def upload_foto():
-    """Subir foto de técnico"""
-    try:
-        data = request.get_json()
-        if not data or 'imagen' not in data or 'tecnico_id' not in data:
-            return jsonify({'error': 'Faltan datos'}), 400
-        
-        tecnico_id = data['tecnico_id']
-        imagen_base64 = data['imagen']
-        
-        # Quitar prefijo data:image si existe
-        if 'base64,' in imagen_base64:
-            imagen_base64 = imagen_base64.split('base64,')[1]
-        
-        # Decodificar imagen
-        imagen_bytes = base64.b64decode(imagen_base64)
-        
-        # Nombre de archivo
-        filename = f"tec_{tecnico_id}.jpg"
-        uploads_folder = os.path.join(os.path.dirname(__file__), 'uploads', 'fotos')
-        
-        # Crear carpeta si no existe
-        if not os.path.exists(uploads_folder):
-            os.makedirs(uploads_folder)
-        
-        # Guardar archivo
-        filepath = os.path.join(uploads_folder, filename)
-        with open(filepath, 'wb') as f:
-            f.write(imagen_bytes)
-        
-        # Guardar URL en la base de datos
-        tecnico = Tecnico.query.get(tecnico_id)
-        if tecnico:
-            tecnico.foto = f"/uploads/fotos/{filename}"
-            db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'foto': f"/uploads/fotos/{filename}"
-        })
-        
-    except Exception as e:
-        print(f"Error uploading foto: {e}")
-        return jsonify({'error': str(e)}), 500
 
 # ============ LABORATORIOS ============
 
@@ -67,7 +18,6 @@ def get_laboratorios():
     laboratorios = Laboratorio.query.all()
     return jsonify([l.to_dict() for l in laboratorios])
 
-
 @api.route('/laboratorios/<id>', methods=['GET'])
 def get_laboratorio(id):
     """Obtener un laboratorio por ID"""
@@ -76,13 +26,11 @@ def get_laboratorio(id):
         return jsonify({'error': 'Laboratorio no encontrado'}), 404
     return jsonify(laboratorio.to_dict())
 
-
 @api.route('/laboratorios', methods=['POST'])
 def create_laboratorio():
     """Crear un nuevo laboratorio"""
     data = request.get_json()
     
-    # Manejar backwards compatibility: aceptar 'estado' o 'activo'
     activo_value = data.get('activo')
     if activo_value is None:
         estado_value = data.get('estado', 'activo')
@@ -103,7 +51,6 @@ def create_laboratorio():
     
     return jsonify(laboratorio.to_dict()), 201
 
-
 @api.route('/laboratorios/<id>', methods=['PUT'])
 def update_laboratorio(id):
     """Actualizar un laboratorio"""
@@ -117,7 +64,6 @@ def update_laboratorio(id):
     laboratorio.ubicacion = data.get('ubicacion', laboratorio.ubicacion)
     laboratorio.descripcion = data.get('descripcion', laboratorio.descripcion)
     laboratorio.responsable = data.get('responsable', laboratorio.responsable)
-    # Manejar backwards compatibility: aceptar 'estado' o 'activo'
     if 'activo' in data:
         laboratorio.activo = data.get('activo')
     elif 'estado' in data:
@@ -125,7 +71,6 @@ def update_laboratorio(id):
     
     db.session.commit()
     return jsonify(laboratorio.to_dict())
-
 
 @api.route('/laboratorios/<id>', methods=['DELETE'])
 def delete_laboratorio(id):
@@ -137,7 +82,6 @@ def delete_laboratorio(id):
     db.session.delete(laboratorio)
     db.session.commit()
     return jsonify({'message': 'Laboratorio eliminado'}), 200
-
 
 # ============ EQUIPOS ============
 
@@ -151,7 +95,6 @@ def get_equipos():
         equipos = Equipo.query.all()
     return jsonify([e.to_dict() for e in equipos])
 
-
 @api.route('/equipos/<id>', methods=['GET'])
 def get_equipo(id):
     """Obtener un equipo por ID"""
@@ -159,7 +102,6 @@ def get_equipo(id):
     if not equipo:
         return jsonify({'error': 'Equipo no encontrado'}), 404
     return jsonify(equipo.to_dict())
-
 
 @api.route('/equipos', methods=['POST'])
 def create_equipo():
@@ -170,7 +112,6 @@ def create_equipo():
     if data.get('fecha_instalacion') and data['fecha_instalacion'].strip():
         fecha_instalacion = datetime.strptime(data['fecha_instalacion'], '%Y-%m-%d').date()
     
-    # Manejar backwards compatibility: aceptar 'estado' o 'activo'
     activo_value = data.get('activo')
     if activo_value is None:
         estado_value = data.get('estado', 'operativo')
@@ -196,7 +137,6 @@ def create_equipo():
     
     return jsonify(equipo.to_dict()), 201
 
-
 @api.route('/equipos/<id>', methods=['PUT'])
 def update_equipo(id):
     """Actualizar un equipo"""
@@ -212,7 +152,6 @@ def update_equipo(id):
     if 'id_laboratorio' in data and data['id_laboratorio']:
         equipo.id_laboratorio = data['id_laboratorio']
     
-    # Manejar nombres de campos del frontend
     ultimo_mantenimiento = data.get('ultimo_mantenimiento') or data.get('fecha_ultimo_mantenimiento')
     if ultimo_mantenimiento:
         equipo.fecha_ultimo_mantenimiento = datetime.strptime(ultimo_mantenimiento, '%Y-%m-%d').date()
@@ -229,7 +168,6 @@ def update_equipo(id):
     equipo.serie = data.get('serie', equipo.serie)
     equipo.numero_serie = data.get('numero_serie', equipo.numero_serie)
     
-    # Manejar estado y activo
     if 'estado' in data:
         equipo.estado = data.get('estado')
     if 'activo' in data:
@@ -237,12 +175,10 @@ def update_equipo(id):
     elif 'estado' in data:
         equipo.activo = (data.get('estado') == 'operativo' or data.get('estado') == 'activo')
     
-    # Manejar descripcion (acepta 'observaciones' del frontend)
     equipo.descripcion = data.get('descripcion') or data.get('observaciones') or equipo.descripcion
     
     db.session.commit()
     return jsonify(equipo.to_dict())
-
 
 @api.route('/equipos/<id>', methods=['DELETE'])
 def delete_equipo(id):
@@ -254,7 +190,6 @@ def delete_equipo(id):
     db.session.delete(equipo)
     db.session.commit()
     return jsonify({'message': 'Equipo eliminado'}), 200
-
 
 # ============ COMPONENTES ============
 
@@ -268,7 +203,6 @@ def get_componentes():
         componentes = Componente.query.all()
     return jsonify([c.to_dict() for c in componentes])
 
-
 @api.route('/componentes/<id>', methods=['GET'])
 def get_componente(id):
     """Obtener un componente por ID"""
@@ -277,13 +211,11 @@ def get_componente(id):
         return jsonify({'error': 'Componente no encontrado'}), 404
     return jsonify(componente.to_dict())
 
-
 @api.route('/componentes', methods=['POST'])
 def create_componente():
     """Crear un nuevo componente"""
     data = request.get_json()
     
-    # Manejar backwards compatibility: aceptar 'estado' o 'activo'
     activo_value = data.get('activo')
     if activo_value is None:
         estado_value = data.get('estado', 'operativo')
@@ -306,7 +238,6 @@ def create_componente():
     
     return jsonify(componente.to_dict()), 201
 
-
 @api.route('/componentes/<id>', methods=['PUT'])
 def update_componente(id):
     """Actualizar un componente"""
@@ -318,7 +249,6 @@ def update_componente(id):
     componente.nombre = data.get('nombre', componente.nombre)
     componente.tipo = data.get('tipo', componente.tipo)
     componente.numero_parte = data.get('numero_parte', componente.numero_parte)
-    # Manejar backwards compatibility: aceptar 'estado' o 'activo'
     if 'activo' in data:
         componente.activo = data.get('activo')
     elif 'estado' in data:
@@ -329,7 +259,6 @@ def update_componente(id):
     
     db.session.commit()
     return jsonify(componente.to_dict())
-
 
 @api.route('/componentes/<id>', methods=['DELETE'])
 def delete_componente(id):
@@ -342,7 +271,6 @@ def delete_componente(id):
     db.session.commit()
     return jsonify({'message': 'Componente eliminado'}), 200
 
-
 # ============ TÉCNICOS ============
 
 @api.route('/tecnicos', methods=['GET'])
@@ -350,7 +278,6 @@ def get_tecnicos():
     """Obtener todos los técnicos"""
     tecnicos = Tecnico.query.all()
     return jsonify([t.to_dict() for t in tecnicos])
-
 
 @api.route('/tecnicos/<id>', methods=['GET'])
 def get_tecnico(id):
@@ -360,52 +287,37 @@ def get_tecnico(id):
         return jsonify({'error': 'Técnico no encontrado'}), 404
     return jsonify(tecnico.to_dict())
 
-
 @api.route('/tecnicos', methods=['POST'])
 def create_tecnico():
     """Crear un nuevo técnico"""
     data = request.get_json()
-    print("Data received:", data)
-    try:
-        
-        # Manejar backwards compatibility: aceptar 'estado' o 'activo'
-        activo_value = data.get('activo')
-        if activo_value is None:
-            estado_value = data.get('estado', 'activo')
-            activo_value = (estado_value == 'activo')
-        
-        fecha_contratacion = None
-        if data.get('fecha_contratacion') and data['fecha_contratacion'].strip():
-            fecha_contratacion = datetime.strptime(data['fecha_contratacion'], '%Y-%m-%d').date()
-        
-        horas_trabajadas_mes = data.get('horas_trabajadas_mes')
-        if horas_trabajadas_mes is not None and str(horas_trabajadas_mes).strip():
-            horas_trabajadas_mes = int(horas_trabajadas_mes)
-        else:
-            horas_trabajadas_mes = 0
-        
-        tecnico = Tecnico(
-            id=data.get('id') or str(uuid.uuid4()),
-            nombre=data.get('nombre'),
-            apellido=data.get('apellido'),
-            email=data.get('email'),
-            telefono=data.get('telefono'),
-            especialidad=data.get('especialidad'),
-            legajo=data.get('legajo'),
-            activo=activo_value,
-            foto=data.get('foto'),
-            fecha_contratacion=fecha_contratacion,
-            horas_trabajadas_mes=horas_trabajadas_mes
-        )
+    
+    activo_value = data.get('activo')
+    if activo_value is None:
+        estado_value = data.get('estado', 'activo')
+        activo_value = (estado_value == 'activo')
+    
+    fecha_contratacion = None
+    if data.get('fecha_contratacion') and data['fecha_contratacion'].strip():
+        fecha_contratacion = datetime.strptime(data['fecha_contratacion'], '%Y-%m-%d').date()
+    
+    tecnico = Tecnico(
+        id=data.get('id') or str(uuid.uuid4()),
+        nombre=data.get('nombre'),
+        apellido=data.get('apellido'),
+        email=data.get('email'),
+        telefono=data.get('telefono'),
+        especialidad=data.get('especialidad'),
+        legajo=data.get('legajo'),
+        activo=activo_value,
+        foto=data.get('foto'),
+        fecha_contratacion=fecha_contratacion
+    )
 
-        db.session.add(tecnico)
-        db.session.commit()
-        
-        return jsonify(tecnico.to_dict()), 201
-    except Exception as e:
-        print(f"Error creating tecnico: {e}")
-        return jsonify({'error': str(e)}), 500
-
+    db.session.add(tecnico)
+    db.session.commit()
+    
+    return jsonify(tecnico.to_dict()), 201
 
 @api.route('/tecnicos/<id>', methods=['PUT'])
 def update_tecnico(id):
@@ -416,7 +328,6 @@ def update_tecnico(id):
     
     data = request.get_json()
     
-    # Manejar fecha de contratacion
     if 'fecha_contratacion' in data and data['fecha_contratacion']:
         tecnico.fecha_contratacion = datetime.strptime(data['fecha_contratacion'], '%Y-%m-%d').date()
     
@@ -428,10 +339,7 @@ def update_tecnico(id):
     tecnico.legajo = data.get('legajo', tecnico.legajo)
     if 'foto' in data:
         tecnico.foto = data.get('foto')
-    if 'horas_trabajadas_mes' in data:
-        tecnico.horas_trabajadas_mes = data.get('horas_trabajadas_mes')
     
-    # Manejar estado y activo
     if 'estado' in data:
         tecnico.estado = data.get('estado')
         tecnico.activo = (data.get('estado') == 'activo')
@@ -440,7 +348,6 @@ def update_tecnico(id):
     
     db.session.commit()
     return jsonify(tecnico.to_dict())
-
 
 @api.route('/tecnicos/<id>', methods=['DELETE'])
 def delete_tecnico(id):
@@ -452,7 +359,6 @@ def delete_tecnico(id):
     db.session.delete(tecnico)
     db.session.commit()
     return jsonify({'message': 'Técnico eliminado'}), 200
-
 
 # ============ TAREAS ============
 
@@ -471,7 +377,6 @@ def get_tareas():
     tareas = query.all()
     return jsonify([t.to_dict() for t in tareas])
 
-
 @api.route('/tareas/<id>', methods=['GET'])
 def get_tarea(id):
     """Obtener una tarea por ID"""
@@ -479,7 +384,6 @@ def get_tarea(id):
     if not tarea:
         return jsonify({'error': 'Tarea no encontrada'}), 404
     return jsonify(tarea.to_dict())
-
 
 @api.route('/tareas', methods=['POST'])
 def create_tarea():
@@ -501,31 +405,13 @@ def create_tarea():
         fecha_programada=fecha_programada,
         duracion_estimada_horas=data.get('duracion_estimada_horas'),
         notas=data.get('notas') or data.get('observaciones'),
-        materiales_requeridos=data.get('materiales_requeridos'),
-        herramientas_requeridas=data.get('herramientas_requeridas'),
-        procedimiento=data.get('procedimiento'),
-        resultado=data.get('resultado'),
         fotos=data.get('fotos', [])
     )
     
     db.session.add(tarea)
     db.session.commit()
     
-    # Crear asignaciones si existen
-    if data.get('asignaciones'):
-        for asig_data in data['asignaciones']:
-            asignacion = Asignacion(
-                id=str(uuid.uuid4()),
-                id_tarea=tarea.id,
-                id_tecnico=asig_data.get('id_tecnico'),
-                notas=asig_data.get('notas'),
-                horas_trabajadas=asig_data.get('horas_trabajadas', 0)
-            )
-            db.session.add(asignacion)
-        db.session.commit()
-    
     return jsonify(tarea.to_dict()), 201
-
 
 @api.route('/tareas/<id>', methods=['PUT'])
 def update_tarea(id):
@@ -543,44 +429,20 @@ def update_tarea(id):
     if 'fecha_fin' in data and data['fecha_fin']:
         tarea.fecha_fin = datetime.strptime(data['fecha_fin'], '%Y-%m-%d').date()
     
-    # Manejar id_equipo
     if 'id_equipo' in data:
         tarea.id_equipo = data['id_equipo'] if data['id_equipo'] else None
     
     tarea.titulo = data.get('titulo', tarea.titulo)
     tarea.descripcion = data.get('descripcion', tarea.descripcion)
-    # Aceptar tanto 'tipo' como 'tipo_tarea' del frontend
     tarea.tipo = data.get('tipo') or data.get('tipo_tarea') or tarea.tipo
     tarea.prioridad = data.get('prioridad', tarea.prioridad)
     tarea.estado = data.get('estado', tarea.estado)
     tarea.duracion_estimada_horas = data.get('duracion_estimada_horas', tarea.duracion_estimada_horas)
     tarea.notas = data.get('notas') or data.get('observaciones') or tarea.notas
-    # Actualizar los nuevos campos
-    tarea.materiales_requeridos = data.get('materiales_requeridos', tarea.materiales_requeridos)
-    tarea.herramientas_requeridas = data.get('herramientas_requeridas', tarea.herramientas_requeridas)
-    tarea.procedimiento = data.get('procedimiento', tarea.procedimiento)
-    tarea.resultado = data.get('resultado', tarea.resultado)
     tarea.fotos = data.get('fotos', tarea.fotos)
-    
-    # Manejar asignaciones si existen
-    if data.get('asignaciones'):
-        # Eliminar asignaciones existentes
-        Asignacion.query.filter_by(id_tarea=id).delete()
-        
-        # Crear nuevas asignaciones
-        for asig_data in data['asignaciones']:
-            asignacion = Asignacion(
-                id=asig_data.get('id') or str(uuid.uuid4()),
-                id_tarea=id,
-                id_tecnico=asig_data.get('id_tecnico'),
-                notas=asig_data.get('notas'),
-                horas_trabajadas=asig_data.get('horas_trabajadas', 0)
-            )
-            db.session.add(asignacion)
     
     db.session.commit()
     return jsonify(tarea.to_dict())
-
 
 @api.route('/tareas/<id>', methods=['DELETE'])
 def delete_tarea(id):
@@ -593,79 +455,12 @@ def delete_tarea(id):
     db.session.commit()
     return jsonify({'message': 'Tarea eliminada'}), 200
 
-
-# ============ ASIGNACIONES ============
-
-@api.route('/asignaciones', methods=['GET'])
-def get_asignaciones():
-    """Obtener todas las asignaciones"""
-    id_tarea = request.args.get('id_tarea')
-    id_tecnico = request.args.get('id_tecnico')
-    
-    query = Asignacion.query
-    if id_tarea:
-        query = query.filter_by(id_tarea=id_tarea)
-    if id_tecnico:
-        query = query.filter_by(id_tecnico=id_tecnico)
-    
-    asignaciones = query.all()
-    return jsonify([a.to_dict() for a in asignaciones])
-
-
-@api.route('/asignaciones', methods=['POST'])
-def create_asignacion():
-    """Crear una nueva asignación"""
-    data = request.get_json()
-    
-    asignacion = Asignacion(
-        id=data.get('id') or str(uuid.uuid4()),
-        id_tarea=data.get('id_tarea'),
-        id_tecnico=data.get('id_tecnico'),
-        notas=data.get('notas'),
-        horas_trabajadas=data.get('horas_trabajadas', 0)
-    )
-    
-    db.session.add(asignacion)
-    db.session.commit()
-    
-    return jsonify(asignacion.to_dict()), 201
-
-
-@api.route('/asignaciones/<id>', methods=['PUT'])
-def update_asignacion(id):
-    """Actualizar una asignación"""
-    asignacion = Asignacion.query.get(id)
-    if not asignacion:
-        return jsonify({'error': 'Asignación no encontrada'}), 404
-    
-    data = request.get_json()
-    asignacion.estado = data.get('estado', asignacion.estado)
-    asignacion.notas = data.get('notas', asignacion.notas)
-    asignacion.horas_trabajadas = data.get('horas_trabajadas', asignacion.horas_trabajadas)
-    
-    db.session.commit()
-    return jsonify(asignacion.to_dict())
-
-
-@api.route('/asignaciones/<id>', methods=['DELETE'])
-def delete_asignacion(id):
-    """Eliminar una asignación"""
-    asignacion = Asignacion.query.get(id)
-    if not asignacion:
-        return jsonify({'error': 'Asignación no encontrada'}), 404
-    
-    db.session.delete(asignacion)
-    db.session.commit()
-    return jsonify({'message': 'Asignación eliminada'}), 200
-
-
-# ============ DASHBOARD / ESTADÍSTICAS ============
+# ============ DASHBOARD ============
 
 @api.route('/dashboard', methods=['GET'])
 def get_dashboard():
     """Obtener estadísticas para el dashboard"""
     
-    # Contar por estado
     total_laboratorios = Laboratorio.query.count()
     total_equipos = Equipo.query.count()
     total_componentes = Componente.query.count()
@@ -676,7 +471,6 @@ def get_dashboard():
     tareas_en_progreso = Tarea.query.filter_by(estado='en_progreso').count()
     tareas_completadas = Tarea.query.filter_by(estado='completada').count()
     
-    # Equipos por estado
     equipos_operativos = Equipo.query.filter_by(estado='operativo').count()
     equipos_mantenimiento = Equipo.query.filter_by(estado='mantenimiento').count()
     equipos_dados_baja = Equipo.query.filter_by(estado='fuera_servicio').count()
@@ -695,131 +489,7 @@ def get_dashboard():
         'equipos_dados_baja': equipos_dados_baja
     })
 
-
-# ============ MIGRACIÓN DE DATOS ============
-
-@api.route('/migrar', methods=['POST'])
-def migrar_datos():
-    """Migrar datos desde localStorage (JSON) a PostgreSQL"""
-    data = request.get_json()
-    
-    try:
-        # Migrar laboratorios
-        if 'laboratorios' in data:
-            for lab_data in data['laboratorios']:
-                existente = Laboratorio.query.get(lab_data.get('id'))
-                if not existente:
-                    laboratorio = Laboratorio(
-                        id=lab_data.get('id'),
-                        nombre=lab_data.get('nombre'),
-                        ubicacion=lab_data.get('ubicacion'),
-                        descripcion=lab_data.get('descripcion'),
-                        estado=lab_data.get('estado', 'activo')
-                    )
-                    db.session.add(laboratorio)
-        
-        # Migrar equipos
-        if 'equipos' in data:
-            for eq_data in data['equipos']:
-                existente = Equipo.query.get(eq_data.get('id'))
-                if not existente:
-                    fecha_inst = None
-                    if eq_data.get('fecha_instalacion'):
-                        fecha_inst = datetime.strptime(eq_data['fecha_instalacion'], '%Y-%m-%d').date()
-                    
-                    equipo = Equipo(
-                        id=eq_data.get('id'),
-                        id_laboratorio=eq_data.get('id_laboratorio'),
-                        nombre=eq_data.get('nombre'),
-                        tipo=eq_data.get('tipo'),
-                        modelo=eq_data.get('modelo'),
-                        serie=eq_data.get('serie'),
-                        estado=eq_data.get('estado', 'operativo'),
-                        fecha_instalacion=fecha_inst,
-                        descripcion=eq_data.get('descripcion')
-                    )
-                    db.session.add(equipo)
-        
-        # Migrar componentes
-        if 'componentes' in data:
-            for comp_data in data['componentes']:
-                existente = Componente.query.get(comp_data.get('id'))
-                if not existente:
-                    componente = Componente(
-                        id=comp_data.get('id'),
-                        id_equipo=comp_data.get('id_equipo'),
-                        nombre=comp_data.get('nombre'),
-                        tipo=comp_data.get('tipo'),
-                        numero_parte=comp_data.get('numero_parte'),
-                        estado=comp_data.get('estado', 'operativo'),
-                        vida_util_horas=comp_data.get('vida_util_horas'),
-                        horas_usadas=comp_data.get('horas_usadas', 0),
-                        descripcion=comp_data.get('descripcion')
-                    )
-                    db.session.add(componente)
-        
-        # Migrar técnicos
-        if 'tecnicos' in data:
-            for tec_data in data['tecnicos']:
-                existente = Tecnico.query.get(tec_data.get('id'))
-                if not existente:
-                    tecnico = Tecnico(
-                        id=tec_data.get('id'),
-                        nombre=tec_data.get('nombre'),
-                        apellido=tec_data.get('apellido'),
-                        email=tec_data.get('email'),
-                        telefono=tec_data.get('telefono'),
-                        especialidad=tec_data.get('especialidad'),
-                        estado=tec_data.get('estado', 'activo')
-                    )
-                    db.session.add(tecnico)
-        
-        # Migrar tareas
-        if 'tareas' in data:
-            for tar_data in data['tareas']:
-                existente = Tarea.query.get(tar_data.get('id'))
-                if not existente:
-                    fecha_prog = None
-                    if tar_data.get('fecha_programada'):
-                        fecha_prog = datetime.strptime(tar_data['fecha_programada'], '%Y-%m-%d').date()
-                    
-                    tarea = Tarea(
-                        id=tar_data.get('id'),
-                        id_equipo=tar_data.get('id_equipo'),
-                        titulo=tar_data.get('titulo'),
-                        descripcion=tar_data.get('descripcion'),
-                        tipo=tar_data.get('tipo'),
-                        prioridad=tar_data.get('prioridad', 'media'),
-                        estado=tar_data.get('estado', 'pendiente'),
-                        fecha_programada=fecha_prog,
-                        duracion_estimada_horas=tar_data.get('duracion_estimada_horas'),
-                        notas=tar_data.get('notas'),
-                        fotos=tar_data.get('fotos', [])
-                    )
-                    db.session.add(tarea)
-                    db.session.flush()
-                    
-                    # Migrar asignaciones
-                    if tar_data.get('asignaciones'):
-                        for asig_data in tar_data['asignaciones']:
-                            asignacion = Asignacion(
-                                id=str(uuid.uuid4()),
-                                id_tarea=tarea.id,
-                                id_tecnico=asig_data.get('id_tecnico'),
-                                notas=asig_data.get('notas'),
-                                horas_trabajadas=asig_data.get('horas_trabajadas', 0)
-                            )
-                            db.session.add(asignacion)
-        
-        db.session.commit()
-        return jsonify({'message': 'Datos migrados correctamente'}), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
-# ============ EXPORTAR DATOS ============
+# ============ EXPORTAR ============
 
 @api.route('/exportar', methods=['GET'])
 def exportar_datos():
@@ -837,92 +507,3 @@ def exportar_datos():
         'tecnicos': tecnicos,
         'tareas': tareas
     })
-
-
-@api.route('/exportar/pdf', methods=['GET'])
-def exportar_pdf():
-    """Exportar todos los datos a PDF"""
-    class PDF(FPDF):
-        def header(self):
-            self.set_font('Arial', 'B', 15)
-            self.cell(0, 10, 'Sistema de Mantenimiento IMAE - Informe Completo', 0, 1, 'C')
-            self.ln(5)
-        
-        def chapter_title(self, title):
-            self.set_font('Arial', 'B', 12)
-            self.set_fill_color(200, 220, 255)
-            self.cell(0, 10, title, 0, 1, 'L', 1)
-            self.ln(2)
-        
-        def chapter_body(self, data, headers):
-            self.set_font('Arial', '', 9)
-            # Calcular anchos de columnas
-            col_width = 190 / len(headers) if headers else 20
-            # Encabezados
-            self.set_font('Arial', 'B', 8)
-            for h in headers:
-                self.cell(col_width, 7, str(h)[:15], 1, 0, 'C')
-            self.ln()
-            # Datos
-            self.set_font('Arial', '', 8)
-            for row in data:
-                for cell in row:
-                    self.cell(col_width, 6, str(cell)[:15], 1, 0, 'L')
-                self.ln()
-            self.ln(5)
-    
-    pdf = PDF()
-    pdf.add_page()
-    
-    # Laboratorios
-    laboratorios = Laboratorio.query.all()
-    if laboratorios:
-        pdf.chapter_title('Laboratorios')
-        headers = ['Nombre', 'Ubicación', 'Estado']
-        data = [[l.nombre, l.ubicacion, 'Activo' if l.activo else 'Inactivo'] for l in laboratorios]
-        pdf.chapter_body(data, headers)
-    
-    # Equipos
-    equipos = Equipo.query.all()
-    if equipos:
-        pdf.chapter_title('Equipos')
-        headers = ['Nombre', 'Tipo', 'Estado']
-        data = [[e.nombre, e.tipo, 'Activo' if e.activo else 'Inactivo'] for e in equipos]
-        pdf.chapter_body(data, headers)
-    
-    # Componentes
-    componentes = Componente.query.all()
-    if componentes:
-        pdf.chapter_title('Componentes')
-        headers = ['Nombre', 'Tipo', 'Estado']
-        data = [[c.nombre, c.tipo, 'Activo' if c.activo else 'Inactivo'] for c in componentes]
-        pdf.chapter_body(data, headers)
-    
-    # Técnicos
-    tecnicos = Tecnico.query.all()
-    if tecnicos:
-        pdf.chapter_title('Técnicos')
-        headers = ['Nombre', 'Apellido', 'Especialidad', 'Estado']
-        data = [[t.nombre, t.apellido, t.especialidad, 'Activo' if t.activo else 'Inactivo'] for t in tecnicos]
-        pdf.chapter_body(data, headers)
-    
-    # Tareas
-    tareas = Tarea.query.all()
-    if tareas:
-        pdf.chapter_title('Tareas')
-        headers = ['Título', 'Tipo', 'Prioridad', 'Estado']
-        data = [[t.titulo, t.tipo, t.prioridad, t.estado] for t in tareas]
-        pdf.chapter_body(data, headers)
-    
-    # Output to buffer
-    buffer = io.BytesIO()
-    pdf_output = pdf.output(dest='S').encode('latin-1')
-    buffer.write(pdf_output)
-    buffer.seek(0)
-    
-    return send_file(
-        buffer,
-        mimetype='application/pdf',
-        as_attachment=True,
-        download_name='informe_mantenimiento.pdf'
-    )

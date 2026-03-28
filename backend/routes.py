@@ -1,5 +1,9 @@
 from flask import Blueprint, request, jsonify, send_file
-from .models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
+
+try:
+    from .models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
+except ImportError:
+    from models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
 from fpdf import FPDF
 from datetime import datetime
 from uuid import uuid4

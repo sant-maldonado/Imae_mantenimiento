@@ -1,8 +1,15 @@
-from flask import Flask, jsonify
+from flask import Flask
 from flask_cors import CORS
-from .config import Config
-from .models import db
-from .routes import api
+
+try:
+    from .config import Config
+    from .models import db
+    from .routes import api
+except ImportError:
+    # Ejecutar como `python app.py` desde la carpeta backend (no como paquete)
+    from config import Config
+    from models import db
+    from routes import api
 
 app = Flask(__name__)
 app.config.from_object(Config)

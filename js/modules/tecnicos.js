@@ -3,12 +3,20 @@
 // ============================================
 
 const modTecnicos = {
+    init() {
+        this.render();
+        setInterval(() => this.render(), 5000);
+    },
+    
     // Renderizar lista de técnicos
     render() {
         const grid = document.getElementById('tecnicosGrid');
         if (!grid) return;
         
         const tecnicos = storage.getTecnicos().filter(t => t.estado === 'activo' || t.activo === true);
+        
+        console.log('🎨 Renderizando técnicos:', tecnicos.length);
+        console.log('🎨 Lista técnicos:', tecnicos.map(t => t.id + ' - ' + t.nombre));
         
         if (tecnicos.length === 0) {
             grid.innerHTML = `
@@ -85,7 +93,7 @@ const modTecnicos = {
                 <div class="detail-grid">
                     <div class="detail-item">
                         <span class="detail-label">Fecha de Ingreso</span>
-                        <span class="detail-value">${utils.formatDate(tecnico.fecha_ingreso)}</span>
+                        <span class="detail-value">${utils.formatDate(tecnico.fecha_contratacion || tecnico.fecha_ingreso)}</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">Horas Trabajadas (Mes)</span>
@@ -132,15 +140,16 @@ const modTecnicos = {
         const tecnico = id ? storage.getTecnicos().find(t => t.id === id) : new Tecnico();
         
         const content = `
-            <form id="tecnicoForm">
+            <form id="tecnicoForm" enctype="multipart/form-data">
                 <div class="form-row">
                     <div class="form-group" style="flex: 0 0 100px; text-align: center;">
                         <label class="form-label">Foto</label>
-                        <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--bg-light); margin: 0 auto; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-color);">
-                            ${tecnico.foto ? `<img src="${tecnico.foto}" style="width: 100%; height: 100%; object-fit: cover;">` : '<span style="font-size: 36px;">👤</span>'}
+                        <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--bg-light); margin: 0 auto; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-color);" id="fotoPreviewContainer">
+                            ${tecnico.foto ? `<img src="${tecnico.foto}" id="fotoPreview" style="width: 100%; height: 100%; object-fit: cover;">` : '<span id="fotoPreviewPlaceholder" style="font-size: 36px;">👤</span>'}
                         </div>
-                        <input type="text" class="form-input" name="foto" value="${tecnico.foto || ''}" placeholder="URL de la foto" style="margin-top: 8px; font-size: 12px;">
-                        <small style="color: var(--text-muted); font-size: 11px;">Pega una URL de imagen</small>
+                        <input type="file" class="form-input" name="imagen" id="imagenInput" accept="image/*" style="margin-top: 8px; font-size: 12px;">
+                        <input type="hidden" name="foto" id="fotoHidden" value="${tecnico.foto || ''}">
+                        <small style="color: var(--text-muted); font-size: 11px;">Selecciona una imagen</small>
                     </div>
                     <div style="flex: 1;">
                         <div class="form-row">
@@ -223,8 +232,23 @@ const modTecnicos = {
         const fechaContratacionInput = form.querySelector('input[name="fecha_contratacion"]');
         const horasTrabajadasInput = form.querySelector('input[name="horas_trabajadas_mes"]');
         const activoInput = form.querySelector('input[name="activo"]');
+        const estadoInput = form.querySelector('select[name="estado"]');
+        const imagenInput = form.querySelector('input[name="imagen"]');
+        const fotoHidden = form.querySelector('input[name="foto"]');
+        
+        // Generar ID si es nuevo técnico
+        let tecnicoId = id;
+        if (!tecnicoId) {
+            const tecnicos = storage.getTecnicos();
+            const maxNum = tecnicos.reduce((max, t) => {
+                const match = t.id.match(/TEC-(\d+)/);
+                return match ? Math.max(max, parseInt(match[1])) : max;
+            }, 0);
+            tecnicoId = `TEC-${String(maxNum + 1).padStart(3, '0')}`;
+        }
         
         const data = {
+            id: tecnicoId,
             nombre: nombreInput ? nombreInput.value : '',
             apellido: apellidoInput ? apellidoInput.value : '',
             email: emailInput ? emailInput.value : '',
@@ -233,25 +257,46 @@ const modTecnicos = {
             legajo: legajoInput ? legajoInput.value : '',
             fecha_contratacion: fechaContratacionInput ? fechaContratacionInput.value : '',
             horas_trabajadas_mes: horasTrabajadasInput ? parseInt(horasTrabajadasInput.value) || 0 : 0,
-            activo: activoInput ? activoInput.checked : true
+            activo: activoInput ? activoInput.checked : true,
+            estado: estadoInput ? estadoInput.value : 'activo',
+            foto: fotoHidden ? fotoHidden.value : ''
         };
         
-        if (id) {
-            const existing = storage.getTecnicos().find(t => t.id === id);
-            data.id = id;
-            data.activo = existing ? existing.activo : true;
-            data.foto = existing ? existing.foto : ''; // Preservar foto existente
+        console.log('📝 Data a guardar:', data);
+        
+        // Subir imagen si se seleccionó una
+        if (imagenInput && imagenInput.files && imagenInput.files[0]) {
+            console.log('📤 Subiendo imagen...');
+            const formData = new FormData();
+            formData.append('imagen', imagenInput.files[0]);
+            
+            try {
+                const uploadResponse = await fetch('http://127.0.0.1:3000/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (uploadResponse.ok) {
+                    const result = await uploadResponse.json();
+                    data.foto = result.filePath;
+                    console.log('✅ Imagen subida:', result.filePath);
+                } else {
+                    console.error('❌ Error al subir imagen');
+                }
+            } catch (err) {
+                console.error('❌ Error al subir imagen:', err);
+            }
         }
         
-        // Guardar en el backend (sin el campo foto)
-        await storage.saveTecnico(data);
-        
-        // Actualizar el cache local con la foto
-        const tecnicos = storage.getTecnicos();
-        const idx = tecnicos.findIndex(t => t.id === data.id);
-        if (idx !== -1) {
-            tecnicos[idx].foto = data.foto;
-            localStorage.setItem('tecnicos', JSON.stringify(tecnicos));
+        try {
+            await storage.saveTecnico(data);
+            console.log('✅ Técnico guardado');
+            
+            // Recargar datos desde la API para asegurar que tenemos los latest
+            const tecnicosActualizados = await storage.fetchAPI('/tecnicos');
+            storage.cache.tecnicos = tecnicosActualizados || [];
+        } catch (err) {
+            console.error('❌ Error al guardar:', err);
         }
         
         ui.closeModal();
@@ -260,6 +305,23 @@ const modTecnicos = {
         app.updateDashboard();
     }
 };
+
+// Event listener para previsualizar imagen
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'imagenInput') {
+        const file = e.target.files[0];
+        const fotoPreviewContainer = document.getElementById('fotoPreviewContainer');
+        const fotoHidden = document.getElementById('fotoHidden');
+        
+        if (file && fotoPreviewContainer) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fotoPreviewContainer.innerHTML = '<img src="' + e.target.result + '" id="fotoPreview" style="width: 100%; height: 100%; object-fit: cover;">';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+});
 
 // Exportar
 window.modTecnicos = modTecnicos;

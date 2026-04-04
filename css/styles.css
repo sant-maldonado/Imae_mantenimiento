@@ -879,6 +879,36 @@ tbody tr:last-child td {
     gap: 12px;
 }
 
+.view-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.view-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: var(--bg-dark);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+}
+
+.view-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.view-value {
+    font-size: 16px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
 /* ============================================
    Toast Notifications
    ============================================ */
@@ -1296,10 +1326,14 @@ tbody tr:last-child td {
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     z-index: 9999;
+}
+
+.login-screen.visible {
+    display: flex;
 }
 
 .login-container {

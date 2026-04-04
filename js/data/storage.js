@@ -22,6 +22,9 @@ class Storage {
     async init() {
         if (this.initialized) return;
         
+        // Limpiar localStorage al iniciar (usar solo datos de la API)
+        this.limpiarLocalStorage();
+        
         try {
             await this.loadAll();
             this.initialized = true;
@@ -39,8 +42,21 @@ class Storage {
         }
     }
 
+    // Limpiar localStorage para usar solo datos de la API
+    limpiarLocalStorage() {
+        const keysToKeep = ['currentUser']; // Solo mantener sesión de usuario
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && !keysToKeep.includes(key)) {
+                localStorage.removeItem(key);
+            }
+        }
+        console.log('🧹 LocalStorage limpiado (solo sesión de usuario mantenida)');
+    }
+
     // Cargar todos los datos desde la API
     async loadAll() {
+        console.log('🔄 Cargando datos desde API...');
         const [labs, eqs, comps, tecs, tars, usrs] = await Promise.all([
             this.fetchAPI('/laboratorios'),
             this.fetchAPI('/equipos'),
@@ -56,6 +72,9 @@ class Storage {
         this.cache.tecnicos = tecs || [];
         this.cache.tareas = tars || [];
         this.cache.usuarios = usrs || [];
+        
+        console.log('📊 Técnicos cargados:', this.cache.tecnicos.length);
+        console.log('📊 Lista técnicos:', this.cache.tecnicos.map(t => t.nombre + ' ' + t.apellido));
     }
 
     // Método genérico para hacer fetch a la API

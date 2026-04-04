@@ -216,10 +216,10 @@ const app = {
                 modComponentes.render();
                 break;
             case 'tecnicos':
-                modTecnicos.render();
+                modTecnicos.init();
                 break;
             case 'usuarios':
-                modUsuarios.render();
+                modUsuarios.init();
                 break;
             case 'tareas':
                 modTareas.render();

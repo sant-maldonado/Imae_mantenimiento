@@ -1,4 +1,9 @@
 const modUsuarios = {
+    init() {
+        this.render();
+        setInterval(() => this.render(), 5000);
+    },
+    
     render() {
         const grid = document.getElementById('usuariosGrid');
         if (!grid) return;
@@ -67,14 +72,44 @@ const modUsuarios = {
         const usuario = storage.getUsuarios().find(u => u.id === id);
         if (!usuario) return;
         
+        const rolLabel = {
+            admin: 'Administrador',
+            tecnico: 'Técnico',
+            supervisor: 'Supervisor'
+        };
+        
         ui.showModal('Ver Usuario', `
-            <div class="form-group">
-                <label>Nombre: ${usuario.nombre} ${usuario.apellido}</label>
-                <label>Email: ${usuario.email}</label>
-                <label>Rol: ${usuario.rol}</label>
-                <label>Estado: ${usuario.activo ? 'Activo' : 'Inactivo'}</label>
+            <div class="view-details">
+                <div class="view-detail-item">
+                    <span class="view-label">ID:</span>
+                    <span class="view-value">${usuario.id}</span>
+                </div>
+                <div class="view-detail-item">
+                    <span class="view-label">Nombre:</span>
+                    <span class="view-value">${usuario.nombre} ${usuario.apellido}</span>
+                </div>
+                <div class="view-detail-item">
+                    <span class="view-label">Email:</span>
+                    <span class="view-value">${usuario.email}</span>
+                </div>
+                <div class="view-detail-item">
+                    <span class="view-label">Rol:</span>
+                    <span class="view-value">${rolLabel[usuario.rol] || usuario.rol}</span>
+                </div>
+                <div class="view-detail-item">
+                    <span class="view-label">Estado:</span>
+                    <span class="view-value">${usuario.activo ? 'Activo' : 'Inactivo'}</span>
+                </div>
+                <div class="view-detail-item">
+                    <span class="view-label">Último Login:</span>
+                    <span class="view-value">${usuario.ultimo_login ? new Date(usuario.ultimo_login).toLocaleString() : 'Nunca'}</span>
+                </div>
+                <div class="view-detail-item">
+                    <span class="view-label">Fecha de Creación:</span>
+                    <span class="view-value">${usuario.fecha_creacion ? new Date(usuario.fecha_creacion).toLocaleString() : 'N/A'}</span>
+                </div>
             </div>
-        `, 'Cerrar');
+        `, '<button class="btn btn-secondary" onclick="ui.closeModal()">Cerrar</button>');
     },
 
     edit(id) {
@@ -104,7 +139,7 @@ const modUsuarios = {
                     <input type="checkbox" id="editActivo" ${usuario.activo ? 'checked' : ''}>
                 </div>
             </form>
-        `, 'Guardar', async () => {
+        `, '', async () => {
             const nombre = document.getElementById('editNombre').value;
             const apellido = document.getElementById('editApellido').value;
             const email = document.getElementById('editEmail').value;
@@ -147,7 +182,7 @@ const modUsuarios = {
                     </select>
                 </div>
             </form>
-        `, 'Guardar', async () => {
+        `, '', async () => {
             const nuevoRol = document.getElementById('nuevoRol').value;
             
             await storage.actualizarUsuario({ ...usuario, rol: nuevoRol });

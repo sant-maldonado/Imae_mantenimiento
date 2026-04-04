@@ -4,7 +4,7 @@
 
 const ui = {
     // Mostrar modal
-    showModal(title, content, footer = '') {
+    showModal(title, content, footer = '', onConfirm = null) {
         const container = document.getElementById('modalContainer');
         const modalTitle = document.getElementById('modalTitle');
         const modalBody = document.getElementById('modalBody');
@@ -12,7 +12,16 @@ const ui = {
         
         modalTitle.textContent = title;
         modalBody.innerHTML = content;
-        modalFooter.innerHTML = footer;
+        
+        if (onConfirm) {
+            modalFooter.innerHTML = `
+                <button class="btn btn-secondary" onclick="ui.closeModal()">Cancelar</button>
+                <button class="btn btn-primary" id="modalConfirmBtn">Confirmar</button>
+            `;
+            document.getElementById('modalConfirmBtn').addEventListener('click', onConfirm);
+        } else {
+            modalFooter.innerHTML = footer;
+        }
         
         container.classList.add('active');
     },

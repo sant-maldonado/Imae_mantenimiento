@@ -1,7 +1,6 @@
-// Servicio de almacenamiento - Ahora usa API REST en lugar de localStorage
-// Usar la URL del navegador actual para que funcione con cualquier puerto
+// Servicio de almacenamiento - Conecta a PostgreSQL via API REST
 const getApiUrl = () => {
-    const port = 8000; // Puerto del backend
+    const port = 3000; // Puerto del servidor Node.js
     return `http://127.0.0.1:${port}/api`;
 };
 const API_URL = getApiUrl();
@@ -13,7 +12,8 @@ class Storage {
             equipos: [],
             componentes: [],
             tecnicos: [],
-            tareas: []
+            tareas: [],
+            usuarios: []
         };
         this.initialized = false;
     }
@@ -41,12 +41,13 @@ class Storage {
 
     // Cargar todos los datos desde la API
     async loadAll() {
-        const [labs, eqs, comps, tecs, tars] = await Promise.all([
+        const [labs, eqs, comps, tecs, tars, usrs] = await Promise.all([
             this.fetchAPI('/laboratorios'),
             this.fetchAPI('/equipos'),
             this.fetchAPI('/componentes'),
             this.fetchAPI('/tecnicos'),
-            this.fetchAPI('/tareas')
+            this.fetchAPI('/tareas'),
+            this.fetchAPI('/usuarios')
         ]);
 
         this.cache.laboratorios = labs || [];
@@ -54,6 +55,7 @@ class Storage {
         this.cache.componentes = comps || [];
         this.cache.tecnicos = tecs || [];
         this.cache.tareas = tars || [];
+        this.cache.usuarios = usrs || [];
     }
 
     // Método genérico para hacer fetch a la API
@@ -509,6 +511,53 @@ class Storage {
         
         console.log(`Migrando ${totalDatos} registros...`);
         return await this.importData(data);
+    }
+
+    // ============ USUARIOS ============
+    getUsuarios() {
+        return this.cache.usuarios;
+    }
+
+    getUsuarioByEmail(email) {
+        return this.cache.usuarios.find(u => u.email === email);
+    }
+
+    async addUsuario(usuario) {
+        const existente = this.cache.usuarios.find(u => u.email === usuario.email);
+        if (existente) {
+            return { error: 'El email ya está registrado' };
+        }
+        try {
+            const result = await this.fetchAPI('/usuarios', {
+                method: 'POST',
+                body: JSON.stringify(usuario)
+            });
+            if (result) {
+                this.cache.usuarios.push(result);
+            } else {
+                this.cache.usuarios.push(usuario);
+            }
+            return result || usuario;
+        } catch (e) {
+            this.cache.usuarios.push(usuario);
+            return usuario;
+        }
+    }
+
+    async actualizarUsuario(usuario) {
+        const index = this.cache.usuarios.findIndex(u => u.id === usuario.id);
+        if (index !== -1) {
+            this.cache.usuarios[index] = usuario;
+        }
+        try {
+            const result = await this.fetchAPI(`/usuarios/${usuario.id}`, {
+                method: 'PUT',
+                body: JSON.stringify(usuario)
+            });
+            return result || usuario;
+        } catch (e) {
+            return usuario;
+        }
     }
 }
 

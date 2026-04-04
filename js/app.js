@@ -13,6 +13,9 @@ const app = {
         // Cargar datos desde la API (PostgreSQL)
         await storage.init();
         
+        // Inicializar autenticación
+        auth.init();
+        
         // Configurar navegación
         this.setupNavigation();
         
@@ -150,6 +153,7 @@ const app = {
             equipos: 'Equipos',
             componentes: 'Componentes',
             tecnicos: 'Técnicos',
+            usuarios: 'Usuarios del Sistema',
             tareas: 'Tareas de Mantenimiento',
             reportes: 'Reportes'
         };
@@ -160,6 +164,7 @@ const app = {
             equipos: 'Gestión de equipos',
             componentes: 'Gestión de componentes',
             tecnicos: 'Gestión del equipo técnico',
+            usuarios: 'Gestión de usuarios y roles',
             tareas: 'Gestión de tareas de mantenimiento',
             reportes: 'Generación de reportes'
         };
@@ -206,6 +211,9 @@ const app = {
                 break;
             case 'tecnicos':
                 modTecnicos.render();
+                break;
+            case 'usuarios':
+                modUsuarios.render();
                 break;
             case 'tareas':
                 modTareas.render();

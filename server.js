@@ -22,6 +22,23 @@ const pool = new Pool({
     port: 5433,
 });
 
+// Middleware de verificación de roles
+function verificarAdmin(req, res, next) {
+    const rol = req.body.rol || req.query.rol;
+    if (rol !== 'admin') {
+        return res.status(403).json({ error: 'Solo administradores pueden realizar esta acción' });
+    }
+    next();
+}
+
+function verificarTecnico(req, res, next) {
+    const rol = req.body.rol || req.query.rol;
+    if (rol !== 'admin' && rol !== 'tecnico') {
+        return res.status(403).json({ error: 'Solo técnicos y administradores pueden realizar esta acción' });
+    }
+    next();
+}
+
 // Middleware para logging
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);

@@ -1,6 +1,38 @@
 const auth = {
     currentUser: null,
 
+    isAdmin() {
+        return this.currentUser && this.currentUser.rol === ROLES_USUARIO.ADMIN;
+    },
+
+    isTecnico() {
+        return this.currentUser && this.currentUser.rol === ROLES_USUARIO.TECNICO;
+    },
+
+    puedeAdmin() {
+        return this.isAdmin();
+    },
+
+    puedeTecnico() {
+        return this.isAdmin() || this.isTecnico();
+    },
+
+    puedeEditar(elemento) {
+        if (this.isAdmin()) return true;
+        if (this.isTecnico() && elemento === 'tareas') return true;
+        return false;
+    },
+
+    puedeEliminar(elemento) {
+        return this.isAdmin();
+    },
+
+    puedeCrear(elemento) {
+        if (this.isAdmin()) return true;
+        if (this.isTecnico() && elemento === 'tareas') return true;
+        return false;
+    },
+
     init() {
         this.cargarUsuarioActual();
         if (this.currentUser) {
@@ -62,6 +94,33 @@ const auth = {
                 headerActions.appendChild(userInfo);
             }
         }
+
+        this.aplicarPermisos();
+    },
+
+    aplicarPermisos() {
+        const isAdmin = this.isAdmin();
+        const isTecnico = this.isTecnico();
+
+        document.querySelectorAll('.btn-admin').forEach(el => {
+            el.style.display = isAdmin ? '' : 'none';
+        });
+
+        document.querySelectorAll('.btn-crear').forEach(el => {
+            el.style.display = (isAdmin || isTecnico) ? '' : 'none';
+        });
+
+        document.querySelectorAll('.btn-editar').forEach(el => {
+            el.style.display = (isAdmin || isTecnico) ? '' : 'none';
+        });
+
+        document.querySelectorAll('.btn-eliminar').forEach(el => {
+            el.style.display = isAdmin ? '' : 'none';
+        });
+
+        document.querySelectorAll('.seccion-admin').forEach(el => {
+            el.style.display = isAdmin ? '' : 'none';
+        });
     },
 
     async login(email, password) {

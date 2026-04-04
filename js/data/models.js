@@ -46,6 +46,12 @@ const ESTADOS_TECNICO = {
     INACTIVO: 'inactivo'
 };
 
+const ROLES_USUARIO = {
+    ADMIN: 'admin',
+    TECNICO: 'tecnico',
+    VISITANTE: 'visita'
+};
+
 // Clase Laboratorio
 class Laboratorio {
     constructor(data = {}) {
@@ -320,6 +326,38 @@ class HistorialEstado {
             motivo: this.motivo,
             usuario_cambio: this.usuario_cambio,
             fecha_cambio: this.fecha_cambio
+        };
+    }
+}
+
+class Usuario {
+    constructor(data = {}) {
+        this.id = data.id || this.generateId();
+        this.email = data.email || '';
+        this.password = data.password || '';
+        this.nombre = data.nombre || '';
+        this.apellido = data.apellido || '';
+        this.rol = data.rol || ROLES_USUARIO.VISITANTE;
+        this.activo = data.activo !== undefined ? data.activo : true;
+        this.fecha_creacion = data.fecha_creacion || new Date().toISOString();
+        this.ultimo_login = data.ultimo_login || '';
+    }
+
+    generateId() {
+        return 'USR-' + Date.now().toString(36).toUpperCase();
+    }
+
+    toJSON() {
+        return {
+            id: this.id,
+            email: this.email,
+            password: this.password,
+            nombre: this.nombre,
+            apellido: this.apellido,
+            rol: this.rol,
+            activo: this.activo,
+            fecha_creacion: this.fecha_creacion,
+            ultimo_login: this.ultimo_login
         };
     }
 }

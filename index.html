@@ -11,6 +11,66 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <!-- Pantalla de Login -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-logo">
+                <img src="logoimae.jpg" alt="Logo" style="height: 60px;">
+                <h1>Imae-Upkeep</h1>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" required placeholder="email@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
+            </form>
+            <div class="login-footer">
+                <a href="#" onclick="auth.mostrarRegistro()">¿No tienes cuenta? Regístrate</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla de Registro -->
+    <div id="registerScreen" class="login-screen" style="display: none;">
+        <div class="login-container">
+            <div class="login-logo">
+                <img src="logoimae.jpg" alt="Logo" style="height: 60px;">
+                <h1>Registrarse</h1>
+            </div>
+            <form id="registerForm" class="login-form">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="regNombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido</label>
+                    <input type="text" id="regApellido" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="regEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="regPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Contraseña</label>
+                    <input type="password" id="regPasswordConfirm" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Registrarse</button>
+            </form>
+            <div class="login-footer">
+                <a href="#" onclick="auth.mostrarLogin()">¿Ya tienes cuenta? Inicia Sesión</a>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
@@ -51,6 +111,10 @@
                     <li class="nav-item" data-page="reportes">
                         <span class="nav-icon">📈</span>
                         <span>Reportes</span>
+                    </li>
+                    <li class="nav-item seccion-admin" data-page="usuarios" style="display: none;">
+                        <span class="nav-icon">👥</span>
+                        <span>Usuarios</span>
                     </li>
                 </ul>
             </nav>
@@ -261,6 +325,16 @@
                     <div class="cards-grid" id="tecnicosGrid"></div>
                 </div>
 
+                <!-- Usuarios Page (solo admin) -->
+                <div id="page-usuarios" class="page" style="display: none;">
+                    <div class="page-actions">
+                        <button class="btn btn-primary btn-admin" id="btnNuevoUsuario">
+                            <span>+</span> Nuevo Usuario
+                        </button>
+                    </div>
+                    <div class="cards-grid" id="usuariosGrid"></div>
+                </div>
+
                 <!-- Tareas Page -->
                 <div id="page-tareas" class="page" style="max-width: 100%; padding: 24px;">
                     <div class="filters-bar" style="margin-bottom: 20px;">
@@ -375,8 +449,10 @@
     <script src="js/modules/componentes.js?v=2"></script>
     <script src="js/modules/tecnicos.js?v=2"></script>
     <script src="js/modules/tareas.js?v=2"></script>
+    <script src="js/modules/usuarios.js?v=1"></script>
     <script src="js/services/exportService.js?v=2"></script>
     <script src="js/services/reportes.js?v=2"></script>
+    <script src="js/modules/auth.js?v=2"></script>
     <script src="js/app.js?v=2"></script>
 </body>
 </html>

@@ -16,56 +16,51 @@ const modUsuarios = {
             return;
         }
         
-        grid.innerHTML = '';
+        let cardsHtml = '';
         
         usuarios.forEach(usuario => {
-            const card = document.createElement('div');
-            card.className = 'entity-card';
-            card.innerHTML = this.createUsuarioCard(usuario);
+            const rolLabel = {
+                admin: 'Administrador',
+                tecnico: 'Técnico',
+                supervisor: 'Supervisor'
+            };
             
-            const actions = document.createElement('div');
-            actions.className = 'entity-card-footer';
-            
-            if (auth.isAdmin()) {
-                actions.innerHTML = `
+            const actionsHtml = auth.isAdmin() ? `
+                <div class="entity-card-footer">
                     <button class="btn btn-sm btn-secondary" onclick="modUsuarios.view('${usuario.id}')">Ver</button>
                     <button class="btn btn-sm btn-primary" onclick="modUsuarios.edit('${usuario.id}')">Editar</button>
                     <button class="btn btn-sm btn-danger" onclick="modUsuarios.cambiarRol('${usuario.id}')">Cambiar Rol</button>
-                `;
-            }
+                </div>
+            ` : '';
             
-            card.appendChild(actions);
-            grid.appendChild(card);
+            const cardHtml = `
+                <div class="entity-card">
+                    <div class="entity-card-header">
+                        <div class="entity-card-title">${usuario.nombre} ${usuario.apellido}</div>
+                        <span class="badge badge-${usuario.rol === 'admin' ? 'primary' : usuario.rol === 'supervisor' ? 'warning' : 'secondary'}">${rolLabel[usuario.rol] || usuario.rol}</span>
+                    </div>
+                    <div class="entity-card-body">
+                        <div class="entity-card-info">
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">${usuario.email}</span>
+                        </div>
+                        <div class="entity-card-info">
+                            <span class="info-label">Estado:</span>
+                            <span class="info-value">${usuario.activo ? 'Activo' : 'Inactivo'}</span>
+                        </div>
+                        <div class="entity-card-info">
+                            <span class="info-label">Último login:</span>
+                            <span class="info-value">${usuario.ultimo_login ? new Date(usuario.ultimo_login).toLocaleDateString() : 'Nunca'}</span>
+                        </div>
+                    </div>
+                    ${actionsHtml}
+                </div>
+            `;
+            
+            cardsHtml += cardHtml;
         });
-    },
-
-    createUsuarioCard(usuario) {
-        const rolLabel = {
-            admin: 'Administrador',
-            tecnico: 'Técnico',
-            supervisor: 'Supervisor'
-        };
         
-        return `
-            <div class="entity-card-header">
-                <div class="entity-card-title">${usuario.nombre} ${usuario.apellido}</div>
-                <span class="badge badge-${usuario.rol === 'admin' ? 'primary' : usuario.rol === 'supervisor' ? 'warning' : 'secondary'}">${rolLabel[usuario.rol] || usuario.rol}</span>
-            </div>
-            <div class="entity-card-body">
-                <div class="entity-card-info">
-                    <span class="info-label">Email:</span>
-                    <span class="info-value">${usuario.email}</span>
-                </div>
-                <div class="entity-card-info">
-                    <span class="info-label">Estado:</span>
-                    <span class="info-value">${usuario.activo ? 'Activo' : 'Inactivo'}</span>
-                </div>
-                <div class="entity-card-info">
-                    <span class="info-label">Último login:</span>
-                    <span class="info-value">${usuario.ultimo_login ? new Date(usuario.ultimo_login).toLocaleDateString() : 'Nunca'}</span>
-                </div>
-            </div>
-        `;
+        grid.innerHTML = cardsHtml;
     },
 
     view(id) {

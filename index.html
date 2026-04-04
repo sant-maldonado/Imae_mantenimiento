@@ -11,6 +11,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <!-- Ocultar login/registro inicialmente hasta que JavaScript determine el estado -->
+    <style>
+        body { opacity: 0; transition: opacity 0.3s ease; }
+        body.loaded { opacity: 1; }
+        
+        .login-screen { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .login-screen.visible { display: flex; opacity: 1; }
+        
+        .app-container { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .app-container.visible { display: flex; opacity: 1; }
+        .app-container.hidden { display: none; }
+    </style>
+    
     <!-- Pantalla de Login -->
     <div id="loginScreen" class="login-screen">
         <div class="login-container">
@@ -449,10 +462,10 @@
     <script src="js/modules/componentes.js?v=2"></script>
     <script src="js/modules/tecnicos.js?v=2"></script>
     <script src="js/modules/tareas.js?v=2"></script>
-    <script src="js/modules/usuarios.js?v=1"></script>
+    <script src="js/modules/usuarios.js?v=13"></script>
     <script src="js/services/exportService.js?v=2"></script>
     <script src="js/services/reportes.js?v=2"></script>
     <script src="js/modules/auth.js?v=2"></script>
-    <script src="js/app.js?v=2"></script>
+    <script src="js/app.js?v=7"></script>
 </body>
 </html>

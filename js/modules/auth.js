@@ -34,6 +34,7 @@ const auth = {
     },
 
     init() {
+        document.getElementById('loginScreen').classList.add('visible');
         this.cargarUsuarioActual();
         if (this.currentUser) {
             this.mostrarApp();
@@ -58,20 +59,27 @@ const auth = {
     },
 
     mostrarLogin() {
-        document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('registerScreen').style.display = 'none';
+        const loginScreen = document.getElementById('loginScreen');
+        loginScreen.classList.add('visible');
+        document.getElementById('registerScreen').classList.remove('visible');
         document.querySelector('.app-container').classList.add('hidden');
+        document.querySelector('.app-container').classList.remove('visible');
     },
 
     mostrarRegistro() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('registerScreen').style.display = 'flex';
+        const loginScreen = document.getElementById('loginScreen');
+        loginScreen.classList.remove('visible');
+        const registerScreen = document.getElementById('registerScreen');
+        registerScreen.classList.add('visible');
     },
 
     mostrarApp() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('registerScreen').style.display = 'none';
-        document.querySelector('.app-container').classList.remove('hidden');
+        const loginScreen = document.getElementById('loginScreen');
+        loginScreen.classList.remove('visible');
+        document.getElementById('registerScreen').classList.remove('visible');
+        const appContainer = document.querySelector('.app-container');
+        appContainer.classList.remove('hidden');
+        appContainer.classList.add('visible');
         this.actualizarUI();
     },
 

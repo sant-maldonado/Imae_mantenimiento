@@ -16,6 +16,9 @@ const app = {
         // Inicializar autenticación
         auth.init();
         
+        // Mostrar contenido principal
+        document.body.classList.add('loaded');
+        
         // Configurar navegación
         this.setupNavigation();
         
@@ -136,14 +139,17 @@ const app = {
             }
         });
         
-        // Mostrar página correcta
+        // Ocultar todas las páginas
         document.querySelectorAll('.page').forEach(p => {
             p.classList.remove('active');
+            p.style.display = 'none';
         });
         
+        // Mostrar página correcta
         const pageElement = document.getElementById(`page-${page}`);
         if (pageElement) {
             pageElement.classList.add('active');
+            pageElement.style.display = 'block';
         }
         
         // Actualizar título

@@ -1,9 +1,10 @@
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, session
+from functools import wraps
 
 try:
-    from .models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
+    from .models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion, Usuario
 except ImportError:
-    from models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion
+    from models import db, Laboratorio, Equipo, Componente, Tecnico, Tarea, Asignacion, Usuario
 from fpdf import FPDF
 from datetime import datetime
 from uuid import uuid4
@@ -13,6 +14,42 @@ import os
 import base64
 
 api = Blueprint('api', __name__, url_prefix='/api')
+
+def get_current_user():
+    user_id = session.get('user_id')
+    if not user_id:
+        return None
+    return Usuario.query.get(user_id)
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not get_current_user():
+            return jsonify({'error': 'No autenticado'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'No autenticado'}), 401
+        if user.rol != 'admin':
+            return jsonify({'error': 'Sin permisos de administrador'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+def tecnico_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'No autenticado'}), 401
+        if user.rol not in ['admin', 'tecnico']:
+            return jsonify({'error': 'Sin permisos'}), 403
+        return f(*args, **kwargs)
+    return decorated
 
 # ============ LABORATORIOS ============
 
@@ -77,6 +114,7 @@ def update_laboratorio(id):
     return jsonify(laboratorio.to_dict())
 
 @api.route('/laboratorios/<id>', methods=['DELETE'])
+@admin_required
 def delete_laboratorio(id):
     """Eliminar un laboratorio"""
     laboratorio = Laboratorio.query.get(id)
@@ -185,6 +223,7 @@ def update_equipo(id):
     return jsonify(equipo.to_dict())
 
 @api.route('/equipos/<id>', methods=['DELETE'])
+@tecnico_required
 def delete_equipo(id):
     """Eliminar un equipo"""
     equipo = Equipo.query.get(id)
@@ -265,6 +304,7 @@ def update_componente(id):
     return jsonify(componente.to_dict())
 
 @api.route('/componentes/<id>', methods=['DELETE'])
+@tecnico_required
 def delete_componente(id):
     """Eliminar un componente"""
     componente = Componente.query.get(id)
@@ -354,6 +394,7 @@ def update_tecnico(id):
     return jsonify(tecnico.to_dict())
 
 @api.route('/tecnicos/<id>', methods=['DELETE'])
+@admin_required
 def delete_tecnico(id):
     """Eliminar un técnico"""
     tecnico = Tecnico.query.get(id)
@@ -449,6 +490,7 @@ def update_tarea(id):
     return jsonify(tarea.to_dict())
 
 @api.route('/tareas/<id>', methods=['DELETE'])
+@tecnico_required
 def delete_tarea(id):
     """Eliminar una tarea"""
     tarea = Tarea.query.get(id)
@@ -511,3 +553,140 @@ def exportar_datos():
         'tecnicos': tecnicos,
         'tareas': tareas
     })
+
+# ============ AUTH ============
+
+@api.route('/auth/login', methods=['POST'])
+def login():
+    """Iniciar sesión"""
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
+    
+    usuario = Usuario.query.filter_by(username=username).first()
+    if not usuario or not usuario.check_password(password):
+        return jsonify({'error': 'Credenciales inválidas'}), 401
+    
+    if not usuario.activo:
+        return jsonify({'error': 'Usuario inactivo'}), 403
+    
+    session['user_id'] = usuario.id
+    session['rol'] = usuario.rol
+    
+    return jsonify({
+        'message': 'Login exitoso',
+        'usuario': usuario.to_dict()
+    })
+
+@api.route('/auth/logout', methods=['POST'])
+def logout():
+    """Cerrar sesión"""
+    session.clear()
+    return jsonify({'message': 'Sesión cerrada'})
+
+@api.route('/auth/me', methods=['GET'])
+def get_current_user_info():
+    """Obtener usuario actual"""
+    usuario = get_current_user()
+    if not usuario:
+        return jsonify({'error': 'No autenticado'}), 401
+    return jsonify(usuario.to_dict())
+
+@api.route('/auth/register', methods=['POST'])
+@admin_required
+def register():
+    """Registrar nuevo usuario"""
+    data = request.get_json()
+    
+    username = data.get('username')
+    password = data.get('password')
+    rol = data.get('rol', 'normal')
+    nombre = data.get('nombre')
+    email = data.get('email')
+    
+    if not username or not password:
+        return jsonify({'error': 'Usuario y contraseña requeridos'}), 400
+    
+    if Usuario.query.filter_by(username=username).first():
+        return jsonify({'error': 'El usuario ya existe'}), 400
+    
+    usuario = Usuario(
+        username=username,
+        rol=rol,
+        nombre=nombre,
+        email=email
+    )
+    usuario.set_password(password)
+    
+    db.session.add(usuario)
+    db.session.commit()
+    
+    return jsonify(usuario.to_dict()), 201
+
+@api.route('/usuarios', methods=['GET'])
+@admin_required
+def get_usuarios():
+    """Obtener todos los usuarios (solo admin)"""
+    usuarios = Usuario.query.all()
+    return jsonify([u.to_dict() for u in usuarios])
+
+@api.route('/usuarios/<id>', methods=['DELETE'])
+@admin_required
+def delete_usuario(id):
+    """Eliminar usuario (solo admin)"""
+    usuario = Usuario.query.get(id)
+    if not usuario:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+    
+    db.session.delete(usuario)
+    db.session.commit()
+    return jsonify({'message': 'Usuario eliminado'}), 200
+
+@api.route('/usuarios/<id>', methods=['PUT'])
+@admin_required
+def update_usuario(id):
+    """Actualizar usuario (solo admin)"""
+    usuario = Usuario.query.get(id)
+    if not usuario:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+    
+    data = request.get_json()
+    if 'nombre' in data:
+        usuario.nombre = data['nombre']
+    if 'email' in data:
+        usuario.email = data['email']
+    if 'rol' in data:
+        usuario.rol = data['rol']
+    if 'activo' in data:
+        usuario.activo = data['activo']
+    if 'password' in data:
+        usuario.set_password(data['password'])
+    
+    db.session.commit()
+    return jsonify(usuario.to_dict())
+
+@api.route('/auth/init', methods=['POST'])
+def init_first_user():
+    """Crear primer usuario admin (solo si no existe ninguno)"""
+    if Usuario.query.first():
+        return jsonify({'error': 'Ya existen usuarios'}), 400
+    
+    data = request.get_json()
+    username = data.get('username', 'admin')
+    password = data.get('password', 'admin123')
+    
+    usuario = Usuario(
+        username=username,
+        rol='admin',
+        nombre='Administrador',
+        email='admin@imae.go.cr'
+    )
+    usuario.set_password(password)
+    
+    db.session.add(usuario)
+    db.session.commit()
+    
+    return jsonify({'message': 'Usuario admin creado', 'usuario': usuario.to_dict()}), 201

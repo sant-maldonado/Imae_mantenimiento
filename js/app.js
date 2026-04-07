@@ -129,6 +129,13 @@ const app = {
 
     // Navegar a página
     navigateTo(page) {
+        const restrictedPages = ['laboratorios', 'tecnicos', 'usuarios', 'reportes'];
+        if (restrictedPages.includes(page)) {
+            if (!auth || !auth.currentUser || auth.currentUser.rol !== 'admin') {
+                return;
+            }
+        }
+
         this.currentPage = page;
         
         // Actualizar navegación

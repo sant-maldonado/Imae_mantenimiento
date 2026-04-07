@@ -1,8 +1,36 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import uuid
+import hashlib
 
 db = SQLAlchemy()
+
+class Usuario(db.Model):
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    rol = db.Column(db.String(20), default='normal')
+    nombre = db.Column(db.String(100))
+    email = db.Column(db.String(100))
+    activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def set_password(self, password):
+        self.password_hash = hashlib.sha256(password.encode()).hexdigest()
+
+    def check_password(self, password):
+        return self.password_hash == hashlib.sha256(password.encode()).hexdigest()
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'rol': self.rol,
+            'nombre': self.nombre,
+            'email': self.email,
+            'activo': self.activo,
+            'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None
+        }
 
 class Laboratorio(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

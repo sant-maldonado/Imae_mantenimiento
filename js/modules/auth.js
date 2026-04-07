@@ -110,19 +110,23 @@ const auth = {
         const isAdmin = this.isAdmin();
         const isTecnico = this.isTecnico();
 
+        document.querySelectorAll('.nav-item').forEach(el => {
+            const page = el.dataset.page;
+            const restrictedPages = ['dashboard', 'laboratorios', 'tecnicos', 'usuarios', 'reportes'];
+            if (restrictedPages.includes(page)) {
+                el.style.display = isAdmin ? '' : 'none';
+            }
+        });
+
+        document.querySelectorAll('.page').forEach(el => {
+            const pageId = el.id.replace('page-', '');
+            const restrictedPages = ['dashboard', 'laboratorios', 'tecnicos', 'usuarios', 'reportes'];
+            if (restrictedPages.includes(pageId)) {
+                el.style.display = isAdmin ? 'block' : 'none';
+            }
+        });
+
         document.querySelectorAll('.btn-admin').forEach(el => {
-            el.style.display = isAdmin ? '' : 'none';
-        });
-
-        document.querySelectorAll('.btn-crear').forEach(el => {
-            el.style.display = (isAdmin || isTecnico) ? '' : 'none';
-        });
-
-        document.querySelectorAll('.btn-editar').forEach(el => {
-            el.style.display = (isAdmin || isTecnico) ? '' : 'none';
-        });
-
-        document.querySelectorAll('.btn-eliminar').forEach(el => {
             el.style.display = isAdmin ? '' : 'none';
         });
 

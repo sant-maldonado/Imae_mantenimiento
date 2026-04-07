@@ -1,18 +1,20 @@
 from flask import Flask
 from flask_cors import CORS
+from flask import session
+import os
 
 try:
     from .config import Config
     from .models import db
     from .routes import api
 except ImportError:
-    # Ejecutar como `python app.py` desde la carpeta backend (no como paquete)
     from config import Config
     from models import db
     from routes import api
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config['SECRET_KEY'] = os.urandom(24)
 
 CORS(app, origins="*", allow_headers=["Content-Type"])
 

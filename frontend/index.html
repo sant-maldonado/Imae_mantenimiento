@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sist de Control de Mantenimiento - Imae</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="logoimae.jpg" alt="Logo" style="height: 60px;">
+                <h2>Imae-Upkeep</h2>
+                <p>Sistema de Control de Mantenimiento</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="loginUsername" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="loginPassword" class="form-input" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Iniciar Sesión</button>
+                <div id="loginError" class="error-message" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-container" id="appContainer" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                            
+                    <img src="logoimae.jpg" alt="Logo" style="height: 40px; width: auto ;" onclick="window.location.href='index.html'">
+                    <h1 onclick="window.location.href='index.html';">Imae-Upkeep</h1>
+                    
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active" data-page="dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </li>
+                    <li class="nav-item" data-page="laboratorios">
+                        <span class="nav-icon">🏭</span>
+                        <span>Laboratorios</span>
+                    </li>
+                    <li class="nav-item" data-page="equipos">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Equipos</span>
+                    </li>
+                    <li class="nav-item" data-page="componentes">
+                        <span class="nav-icon">🔩</span>
+                        <span>Componentes</span>
+                    </li>
+                    <li class="nav-item" data-page="tecnicos">
+                        <span class="nav-icon">👨‍🔧</span>
+                        <span>Técnicos</span>
+                    </li>
+                    <li class="nav-item" data-page="tareas">
+                        <span class="nav-icon">📋</span>
+                        <span>Tareas</span>
+                    </li>
+                    <li class="nav-item" data-page="usuarios" id="navUsuarios" style="display: none;">
+                        <span class="nav-icon">👥</span>
+                        <span>Usuarios</span>
+                    </li>
+                    <li class="nav-item" data-page="reportes">
+                        <span class="nav-icon">📈</span>
+                        <span>Reportes</span>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="header-title">
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <p id="pageSubtitle">Resumen general del sistema de mantenimiento</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="ui.showContacto()">
+                        📞 Contacto
+                    </button>
+                    <button class="btn btn-primary" id="btnNuevoEquipo" style="display: none;">
+                        <span>+</span> Nuevo Equipo
+                    </button>
+                    <button class="btn btn-primary" id="btnNuevoComponente" style="display: none;">
+                        <span>+</span> Nuevo Componente
+                    </button>
+                    <button class="btn btn-primary" id="btnNuevaTarea" style="display: none;">
+                        <span>+</span> Nueva Tarea
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content Pages -->
+            <div class="content-area">
+                <!-- Dashboard Page -->
+                <div id="page-dashboard" class="page active">
+                    <!-- KPI Cards -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon" style="background: linear-gradient(135deg, #10b981, #34d399);">⚙️</div>
+                            <div class="kpi-content">
+                                <span class="kpi-value" id="kpiEquiposActivos">0</span>
+                                <span class="kpi-label">Equipos Activos</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">📋</div>
+                            <div class="kpi-content">
+                                <span class="kpi-value" id="kpiTareasPendientes">0</span>
+                                <span class="kpi-label">Tareas Pendientes</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">👨‍🔧</div>
+                            <div class="kpi-content">
+                                <span class="kpi-value" id="kpiTecnicosActivos">0</span>
+                                <span class="kpi-label">Técnicos Activos</span>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">🔩</div>
+                            <div class="kpi-content">
+                                <span class="kpi-value" id="kpiComponentes">0</span>
+                                <span class="kpi-label">Componentes</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Equipos por Estado</h3>
+                            <canvas id="chartEquiposEstado"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Tareas por Prioridad</h3>
+                            <canvas id="chartTareasPrioridad"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Equipos Operativos -->
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Equipos Operativos</h3>
+                            <button class="btn btn-sm" onclick="app.navigateTo('equipos')">Ver Todos</button>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaEquiposOperativos">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Tipo</th>
+                                        <th>Laboratorio</th>
+                                        <th>Estado</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Recent Tasks Table -->
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Tareas Recientes</h3>
+                            <button class="btn btn-sm" onclick="app.navigateTo('tareas')">Ver Todas</button>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaTareasRecientes">
+                                <thead>
+                                    <tr>
+                                        <th>Tarea</th>
+                                        <th>Equipo</th>
+                                        <th>Laboratorio</th>
+                                        <th>Técnico</th>
+                                        <th>Estado</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Laboratorios Overview -->
+                    <div class="table-card">
+                        <div class="table-header">
+                            <h3>Laboratorios y Equipos</h3>
+                            <button class="btn btn-sm" onclick="app.navigateTo('laboratorios')">Ver Todos</button>
+                        </div>
+                        <div class="table-container">
+                            <table id="tablaLaboratorios">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Ubicación</th>
+                                        <th>Responsable</th>
+                                        <th>Equipos</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Laboratorios Page -->
+                <div id="page-laboratorios" class="page">
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="btnNuevoLaboratorio">
+                            <span>+</span> Nuevo Laboratorio
+                        </button>
+                    </div>
+                    <div class="cards-grid" id="laboratoriosGrid"></div>
+                </div>
+
+                <!-- Equipos Page -->
+                <div id="page-equipos" class="page">
+                    <div class="filters-bar">
+                        <select id="filtroLaboratorio" class="form-select">
+                            <option value="">Todos los Laboratorios</option>
+                        </select>
+                        <select id="filtroEstado" class="form-select">
+                            <option value="">Todos los Estados</option>
+                            <option value="operativo">Operativo</option>
+                            <option value="mantenimiento">En Mantenimiento</option>
+                            <option value="fuera_servicio">Fuera de Servicio</option>
+                            <option value="dado_baja">Dado de Baja</option>
+                        </select>
+                        <input type="text" id="buscarEquipo" class="form-input" placeholder="Buscar equipo...">
+                    </div>
+                    <div class="cards-grid" id="equiposGrid"></div>
+                </div>
+
+                <!-- Componentes Page -->
+                <div id="page-componentes" class="page">
+                    <div class="filters-bar">
+                        <select id="filtroComponenteEquipo" class="form-select">
+                            <option value="">Todos los Equipos</option>
+                        </select>
+                        <select id="filtroComponenteEstado" class="form-select">
+                            <option value="">Todos los Estados</option>
+                            <option value="funcional">Funcional</option>
+                            <option value="desgastado">Desgastado</option>
+                            <option value="daniado">Dañado</option>
+                            <option value="reemplazado">Reemplazado</option>
+                        </select>
+                        <input type="text" id="buscarComponente" class="form-input" placeholder="Buscar componente...">
+                    </div>
+                    <div class="cards-grid" id="componentesGrid"></div>
+                </div>
+
+                <!-- Técnicos Page -->
+                <div id="page-tecnicos" class="page">
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="btnNuevoTecnico">
+                            <span>+</span> Nuevo Técnico
+                        </button>
+                    </div>
+                    <div class="cards-grid" id="tecnicosGrid"></div>
+                </div>
+
+                <!-- Tareas Page -->
+                <div id="page-tareas" class="page" style="max-width: 100%; padding: 24px;">
+                    <div class="filters-bar" style="margin-bottom: 20px;">
+                        <select id="filtroTareaTipo" class="form-select">
+                            <option value="">Todos los Tipos</option>
+                            <option value="preventivo">Preventivo</option>
+                            <option value="correctivo">Correctivo</option>
+                            <option value="predictivo">Predictivo</option>
+                            <option value="emergencia">Emergencia</option>
+                        </select>
+                        <select id="filtroTareaPrioridad" class="form-select">
+                            <option value="">Todas las Prioridades</option>
+                            <option value="baja">Baja</option>
+                            <option value="media">Media</option>
+                            <option value="alta">Alta</option>
+                            <option value="critica">Crítica</option>
+                        </select>
+                        <select id="filtroTareaEstado" class="form-select">
+                            <option value="">Todos los Estados</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="en_progreso">En Progreso</option>
+                            <option value="completada">Completada</option>
+                        </select>
+                        <input type="text" id="buscarTarea" class="form-input" placeholder="Buscar tarea...">
+                    </div>
+                    <div class="cards-grid" id="tareasGrid"></div>
+                </div>
+
+                <!-- Usuarios Page -->
+                <div id="page-usuarios" class="page">
+                    <div class="page-actions">
+                        <button class="btn btn-primary" onclick="modUsuarios.view('new')">
+                            <span>+</span> Nuevo Usuario
+                        </button>
+                    </div>
+                    <div class="cards-grid" id="usuariosGrid"></div>
+                </div>
+
+                <!-- Reportes Page -->
+                <div id="page-reportes" class="page">
+                    <div class="reports-grid">
+                        <div class="report-card">
+                            <div class="report-icon">📊</div>
+                            <h3>Reporte de Equipos</h3>
+                            <p>Listado completo de equipos por laboratorio y estado</p>
+                            <div class="report-actions">
+                                <button class="btn btn-sm btn-primary" onclick="reportes.generarReporteEquipos()">Ver</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteEquiposPDF()">PDF</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteEquiposExcel()">Excel</button>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">📋</div>
+                            <h3>Reporte de Tareas</h3>
+                            <p>Historial de tareas de mantenimiento por período</p>
+                            <div class="report-actions">
+                                <button class="btn btn-sm btn-primary" onclick="reportes.generarReporteTareas()">Ver</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteTareasPDF()">PDF</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteTareasExcel()">Excel</button>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">👨‍🔧</div>
+                            <h3>Reporte de Técnicos</h3>
+                            <p>Carga de trabajo y desempeño por técnico</p>
+                            <div class="report-actions">
+                                <button class="btn btn-sm btn-primary" onclick="reportes.generarReporteTecnicos()">Ver</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteTecnicosPDF()">PDF</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteTecnicosExcel()">Excel</button>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">🔩</div>
+                            <h3>Reporte de Componentes</h3>
+                            <p>Estado de componentes y próximos reemplazos</p>
+                            <div class="report-actions">
+                                <button class="btn btn-sm btn-primary" onclick="reportes.generarReporteComponentes()">Ver</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteComponentesPDF()">PDF</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteComponentesExcel()">Excel</button>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">📈</div>
+                            <h3>Indicadores KPI</h3>
+                            <p>MTTR, MTBF, disponibilidad y eficiencia</p>
+                            <div class="report-actions">
+                                <button class="btn btn-sm btn-primary" onclick="reportes.generarReporteKPIs()">Ver</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteKPIsPDF()">PDF</button>
+                                <button class="btn btn-sm btn-secondary" onclick="reportes.exportarReporteKPIsExcel()">Excel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer" class="modal-container">
+        <div class="modal" id="mainModal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Título del Modal</h3>
+                <button class="modal-close" onclick="ui.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/services/auth.js"></script>
+    <script src="js/data/models.js?v=101"></script>
+    <script src="js/data/storage.js?v=101"></script>
+    <script src="js/data/sampleData.js?v=2"></script>
+    <script src="js/ui/utils.js?v=101"></script>
+    <script src="js/ui/components.js?v=101"></script>
+    <script src="js/ui/charts.js?v=101"></script>
+    <script src="js/modules/laboratorios.js?v=101"></script>
+    <script src="js/modules/equipos.js?v=101"></script>
+    <script src="js/modules/componentes.js?v=101"></script>
+    <script src="js/modules/tecnicos.js?v=101"></script>
+    <script src="js/modules/tareas.js?v=101"></script>
+    <script src="js/modules/usuarios.js"></script>
+    <script src="js/services/exportService.js?v=101"></script>
+    <script src="js/services/reportes.js?v=101"></script>
+    <script src="js/app.js?v=101"></script>
+    <script src="js/tests/testSistema.js"></script>
+</body>
+</html>
